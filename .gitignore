@@ -32,6 +32,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Heroku build artifact (generated at deploy time)
+public/build-id.txt
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
