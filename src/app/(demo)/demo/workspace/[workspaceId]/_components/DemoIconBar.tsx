@@ -18,8 +18,8 @@ const T = SLACK_TOKENS;
 
 const navItems = [
   { icon: Home, label: "Home" },
-  { icon: MessagesSquare, label: "DMs" },
-  { icon: Bell, label: "Activity", active: true },
+  { icon: MessagesSquare, label: "DMs", badge: 231 },
+  { icon: Bell, label: "Activity", active: true, badge: 3 },
   { icon: Folder, label: "Files" },
   { icon: Bookmark, label: "Later" },
   { icon: Bot, label: "Agentforce" },
@@ -48,12 +48,20 @@ export function DemoIconBar() {
             key={item.label}
             type="button"
             className={cn(
-              "flex flex-col items-center justify-center w-full py-2.5 rounded transition-colors",
+              "relative flex flex-col items-center justify-center w-full py-2 rounded transition-colors",
               item.active ? "bg-white/15" : "hover:bg-white/10"
             )}
             title={item.label}
           >
-            <Icon size={T.iconSizes.sidebar} className="text-white" />
+            <Icon size={T.iconSizes.navIcon} className="text-white" />
+            {item.badge && (
+              <span
+                className="absolute top-1 right-[6px] min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full text-[11px] font-bold text-white"
+                style={{ backgroundColor: T.colors.notificationRed }}
+              >
+                {item.badge}
+              </span>
+            )}
           </button>
         );
       })}
@@ -63,9 +71,13 @@ export function DemoIconBar() {
         className="flex items-center justify-center w-8 h-8 rounded-full border border-white/30 text-white hover:bg-white/10 transition-colors"
         title="Add"
       >
-        <Plus size={T.iconSizes.sidebarSmall} />
+        <Plus size={T.iconSizes.navIconPlus} />
       </button>
-      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mt-2" title="Profile">
+      <div
+        className="w-8 h-8 bg-white/20 flex items-center justify-center mt-2"
+        style={{ borderRadius: `${T.radius.avatar}px` }}
+        title="Profile"
+      >
         <span className="text-[10px] font-bold text-white">P</span>
       </div>
     </aside>

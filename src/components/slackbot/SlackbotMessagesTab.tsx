@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
-  Sparkles,
+  Star,
   Pencil,
   Search,
   Lightbulb,
@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { DEMO_USER_NAME } from "@/context/DemoDataContext";
 
 const PILL_ACTIONS = [
-  { id: "discover", label: "Discover", icon: Sparkles, query: "What would it take to close the gap?" },
+  { id: "discover", label: "Discover", icon: Star, query: "What would it take to close the gap?" },
   { id: "create", label: "Create", icon: Pencil, query: "Prep me for my TechStart meeting" },
   { id: "find", label: "Find", icon: Search, query: "Tell me about Global Industries" },
   { id: "brainstorm", label: "Brainstorm", icon: Lightbulb, query: "What's my risk today?" },
@@ -191,10 +191,10 @@ export function SlackbotMessagesTab() {
       <div className="flex-1 overflow-y-auto space-y-4 p-4 min-h-0">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <div className="w-32 h-32 mb-4 rounded-full bg-[#4a154b]/10 flex items-center justify-center">
-              <Image src="/logo.svg" alt="" width={64} height={64} className="object-contain opacity-80" />
+            <div className="w-[120px] h-[120px] mb-6 flex items-center justify-center">
+              <Image src="/logo.svg" alt="" width={120} height={120} className="object-contain" />
             </div>
-            <h2 className="text-[18px] font-bold text-[#1d1c1d] mb-1">
+            <h2 className="text-[18px] font-bold text-[#1d1c1d] mb-2">
               Good morning, {DEMO_USER_NAME}!
             </h2>
             <p className="text-[15px] text-[#616061] mb-6">
@@ -206,7 +206,7 @@ export function SlackbotMessagesTab() {
                   key={id}
                   type="button"
                   onClick={() => sendMessage(query)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full border text-[14px] font-medium border-[#e8e8e8] text-[#1d1c1d] hover:bg-[#f8f8f8] hover:border-[#d1d1d1] transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-md bg-[#f0f0f0] text-[14px] font-medium text-[#1d1c1d] hover:bg-[#e5e5e5] transition-colors"
                 >
                   <Icon size={16} className="text-[#616061]" />
                   {label}

@@ -112,12 +112,12 @@ export function DemoSidebar() {
               key={item.id}
               href={`/demo/workspace/${workspace.id}/channel/${item.id}`}
               className={cn(
-                "flex items-start gap-2 px-3 py-2 mx-1 rounded group",
+                "flex items-start gap-2 px-2.5 py-1.5 mx-1 rounded group",
                 isActive ? "" : "hover:bg-[#f8f8f8]"
               )}
               style={isActive ? { backgroundColor: T.colors.backgroundAlt, boxShadow: `inset 0 0 0 1px ${T.colors.border}` } : {}}
             >
-              <div className="size-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 mt-0.5" style={{ backgroundColor: T.colors.avatarBg }}>
+              <div className="size-8 flex items-center justify-center text-white text-xs font-semibold shrink-0 mt-0.5" style={{ backgroundColor: T.colors.avatarBg, borderRadius: `${T.radius.avatar}px` }}>
                 {item.type === "channel" ? item.name.charAt(0).toUpperCase() : item.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
