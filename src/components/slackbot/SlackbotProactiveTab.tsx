@@ -1,220 +1,186 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import {
-  buildScanDataFromDemo,
-  buildProposalCardsFromDemo,
-  assignCardHorizons,
-  getSupplementalCards,
-  getExtraWorkNeededCards,
-  computeAmbitionMetrics,
-  getDayZeroVerdict,
-  type ActionCard,
-  type DemoData,
-} from "@/lib/vibeface-logic";
-import { BlockKitRenderer } from "@/components/block-kit/BlockKitRenderer";
-import type { SlackBlock } from "@/components/block-kit/BlockKitRenderer";
-import { cn } from "@/lib/utils";
+import Image from "next/image";
+import { IconStar, IconPencil, IconSearch, IconLightbulb } from "@/components/icons";
+import { DEMO_USER_NAME } from "@/context/DemoDataContext";
 
 export function SlackbotProactiveTab() {
-  const [demoData, setDemoData] = useState<DemoData | null>(null);
-  const [ambitionDays, setAmbitionDays] = useState(45);
-  const [activePeriod, setActivePeriod] = useState<"today" | "this_week" | "this_month">("today");
-  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    fetch("/demo-data.json")
-      .then((r) => r.json())
-      .then(setDemoData)
-      .catch(console.error);
-  }, []);
-
-  const { scanData, mergedCards, verdict, ambitionMetrics } = useMemo(() => {
-    if (!demoData) return {};
-    const scanData = buildScanDataFromDemo(demoData);
-    const baseCards = buildProposalCardsFromDemo(demoData);
-    const ambitionMetrics = computeAmbitionMetrics(scanData, ambitionDays);
-    const extraCards = getExtraWorkNeededCards(scanData, ambitionMetrics, ambitionDays);
-    const withHorizons = assignCardHorizons([...baseCards, ...extraCards]);
-    const supplemental = getSupplementalCards(withHorizons, ambitionDays);
-    const allMerged = [...withHorizons, ...supplemental];
-    const mergedCards = allMerged.filter((c) => !dismissedIds.has(String(c.recordId || "")));
-    const verdict = getDayZeroVerdict({ numberBlock: null, cardsCount: mergedCards.length }, scanData);
-    return { scanData, mergedCards, verdict, ambitionMetrics };
-  }, [demoData, ambitionDays, dismissedIds]);
-
-  const filteredCards = useMemo(() => {
-    if (!mergedCards) return [];
-    return mergedCards.filter((c) => c.horizon === activePeriod);
-  }, [mergedCards, activePeriod]);
-
-  const counts = useMemo(() => {
-    if (!mergedCards) return { today: 0, week: 0, month: 0 };
-    return {
-      today: mergedCards.filter((c) => c.horizon === "today").length,
-      week: mergedCards.filter((c) => c.horizon === "this_week").length,
-      month: mergedCards.filter((c) => c.horizon === "this_month").length,
-    };
-  }, [mergedCards]);
-
-  const handleDismiss = (recordId?: string) => {
-    if (recordId) setDismissedIds((prev) => new Set([...Array.from(prev), recordId]));
-  };
-
-  const handleAction = (action: string, card: ActionCard) => {
-    const dismissActions = ["Dismiss", "I'll handle it", "Later", "Not yet"];
-    if (dismissActions.includes(action)) {
-      handleDismiss(card.recordId);
-    } else {
-      alert(`Action: ${action} on ${card.title}`);
-    }
-  };
-
-  if (!demoData || !verdict) {
-    return <div className="text-sm text-[#616061]">Loading...</div>;
-  }
-
-  const verdictBlocks: SlackBlock[] = [
-    {
-      type: "header",
-      text: { type: "plain_text", text: "Your quota snapshot", emoji: true },
-    },
-    {
-      type: "section",
-      fields: [
-        { type: "mrkdwn", text: `*On track:*\n${scanData?.formattedOnTrackToClose ?? "$185K"}` },
-        { type: "mrkdwn", text: `*Quota:*\n${scanData?.formattedQuota ?? "$1.0M"}` },
-        { type: "mrkdwn", text: `*Gap:*\n${scanData?.formattedGap ?? "$815K"}` },
-        { type: "mrkdwn", text: `*Commission:*\n${scanData?.formattedCommissionAtPace ?? "$12,950"}` },
-      ],
-    },
-    {
-      type: "section",
-      text: { type: "mrkdwn", text: verdict.healthSentence ?? "" },
-    },
-  ];
-
   return (
-    <div className="space-y-4">
-      <BlockKitRenderer blocks={verdictBlocks} />
-
-      <div>
-        <label className="text-sm font-medium block mb-2 text-[#616061]">
-          Meet quota by: <span className="text-[#1d1c1d] font-semibold">{ambitionDays} days</span>
-        </label>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-[#616061]">14</span>
-          <input
-            type="range"
-            min={14}
-            max={60}
-            step={1}
-            value={ambitionDays}
-            onChange={(e) => setAmbitionDays(Number(e.target.value))}
-            className="flex-1 h-2 rounded-full cursor-pointer accent-[#1264a3]"
-          />
-          <span className="text-xs text-[#616061]">60</span>
+    <div className="w-full">
+      {/* Welcome Section */}
+      <div className="flex flex-col items-center text-center py-6 px-4">
+        <div className="w-16 h-16 mb-3">
+          <Image src="/slackbot-logo.svg" alt="Slackbot" width={64} height={64} />
         </div>
-        {ambitionMetrics && (
-          <div className="text-xs text-[#616061] mt-2">
-            {ambitionMetrics.formattedPipelineNeeded} pipeline | {ambitionMetrics.formattedMeetingsPerWeek} meetings/week | {ambitionMetrics.commissionAtQuota} at quota
+        <h2 className="text-lg font-bold text-[#1d1c1d] mb-2">
+          Good morning, {DEMO_USER_NAME}!
+        </h2>
+        <p className="text-sm text-[#616061] mb-6">
+          Here's where you stand.
+        </p>
+
+        {/* Metric Cards */}
+        <div className="grid grid-cols-3 gap-2 w-full mb-6">
+          {/* Quota Card */}
+          <div className="bg-[#f8f8f8] rounded-lg p-3">
+            <div className="text-2xl font-bold text-[#1d1c1d]">$1M</div>
+            <div className="text-xs font-semibold text-[#1d1c1d] mt-1">Quota</div>
+            <div className="text-xs text-[#616061] mt-1">48 days to closing Q3</div>
           </div>
-        )}
+
+          {/* On Track Card */}
+          <div className="bg-[#e0f5f0] rounded-lg p-3">
+            <div className="text-2xl font-bold text-[#1d1c1d]">$198M</div>
+            <div className="text-xs font-semibold text-[#1d1c1d] mt-1">On track to close</div>
+            <div className="text-xs text-[#616061] mt-1">3 Active Deals</div>
+          </div>
+
+          {/* Gap Card */}
+          <div className="bg-[#fce8ee] rounded-lg p-3">
+            <div className="text-2xl font-bold text-[#1d1c1d]">$802K</div>
+            <div className="text-xs font-semibold text-[#1d1c1d] mt-1">Gap</div>
+            <div className="text-xs text-[#616061] mt-1">Needs Attention</div>
+          </div>
+        </div>
+
+        {/* Commission Text */}
+        <div className="text-center mb-4 w-full">
+          <p className="text-sm font-bold text-[#1d1c1d]">
+            Estimated commission at current pace: $14K | At Quota: $70K
+          </p>
+          <p className="text-xs text-[#616061] mt-2">
+            You're at 20% of quota pace with 7 weeks left. You need to activate new pipeline or
+            accelerate existing deals. 2 deals need you today.
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-2 w-full">
+          <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-[#e8e8e8] text-sm font-medium hover:bg-[#f8f8f8] bg-white">
+            <IconStar width={16} height={16} style={{ color: "#616061" }} stroke="currentColor" />
+            <span>Discover</span>
+          </button>
+          <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-[#e8e8e8] text-sm font-medium hover:bg-[#f8f8f8] bg-white">
+            <IconPencil width={16} height={16} style={{ color: "#616061" }} stroke="currentColor" />
+            <span>Create</span>
+          </button>
+          <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-[#e8e8e8] text-sm font-medium hover:bg-[#f8f8f8] bg-white">
+            <IconSearch width={16} height={16} style={{ color: "#616061" }} stroke="currentColor" />
+            <span>Find</span>
+          </button>
+          <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-[#e8e8e8] text-sm font-medium hover:bg-[#f8f8f8] bg-white">
+            <IconLightbulb width={16} height={16} style={{ color: "#616061" }} stroke="currentColor" />
+            <span>Brainstorm</span>
+          </button>
+        </div>
       </div>
 
-      <div className="font-semibold text-[#1d1c1d]">
-        Your next focus — {filteredCards.length} action{filteredCards.length !== 1 ? "s" : ""} toward your {verdict.quotaDisplay}
-      </div>
+      {/* Divider */}
+      <div className="border-t border-[#e8e8e8] mx-4" />
 
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setActivePeriod("today")}
-          className={cn(
-            "px-4 py-2 rounded text-sm font-medium",
-            activePeriod === "today"
-              ? "bg-[#1264a3] text-white"
-              : "border border-[#e8e8e8] text-[#1d1c1d] hover:bg-[#f8f8f8]"
-          )}
-        >
-          Today ({counts.today})
-        </button>
-        <button
-          type="button"
-          onClick={() => setActivePeriod("this_week")}
-          className={cn(
-            "px-4 py-2 rounded text-sm font-medium",
-            activePeriod === "this_week"
-              ? "bg-[#1264a3] text-white"
-              : "border border-[#e8e8e8] text-[#1d1c1d] hover:bg-[#f8f8f8]"
-          )}
-        >
-          This week ({counts.week})
-        </button>
-        <button
-          type="button"
-          onClick={() => setActivePeriod("this_month")}
-          className={cn(
-            "px-4 py-2 rounded text-sm font-medium",
-            activePeriod === "this_month"
-              ? "bg-[#1264a3] text-white"
-              : "border border-[#e8e8e8] text-[#1d1c1d] hover:bg-[#f8f8f8]"
-          )}
-        >
-          This month ({counts.month})
-        </button>
-      </div>
+      {/* Focus Block Section */}
+      <div className="px-4 py-4">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="bg-[#e8d4f5] text-[#6b2e9d] text-xs font-semibold px-2 py-1 rounded">
+            Focus block
+          </span>
+          <span className="text-xs text-[#616061]">20 actions toward your $1.0M</span>
+        </div>
 
-      {filteredCards.length === 0 ? (
-        <div className="text-sm text-[#616061]">No recommended actions for this period.</div>
-      ) : (
-        filteredCards.map((card, idx) => {
-          const cardBlocks: SlackBlock[] = [
-            {
-              type: "section",
-              text: { type: "mrkdwn", text: `*${card.title}*` },
-            },
-            {
-              type: "section",
-              text: { type: "mrkdwn", text: card.description },
-            },
-            ...(card.whyThisMatters
-              ? [{ type: "section" as const, text: { type: "mrkdwn" as const, text: `_${card.whyThisMatters}_` } }]
-              : []),
-            {
-              type: "actions",
-              elements: [
-                {
-                  type: "button",
-                  text: { type: "plain_text", text: card.primaryAction, emoji: true },
-                  action_id: `primary_${card.recordId}_${idx}`,
-                  style: card.primaryAction === "Review" || card.primaryAction === "Yes, prep it" ? "primary" : undefined,
-                },
-                {
-                  type: "button",
-                  text: { type: "plain_text", text: card.secondaryAction, emoji: true },
-                  action_id: `secondary_${card.recordId}_${idx}`,
-                },
-              ],
-            },
-          ].filter(Boolean) as SlackBlock[];
+        {/* Timeline */}
+        <div className="mb-4">
+          <div className="text-xs font-semibold text-[#1d1c1d] mb-2">Meet Quota by</div>
+          <div className="flex items-center gap-2 text-xs text-[#616061]">
+            <div className="h-1 w-24 bg-[#7c3eb1] rounded-full" />
+            <span className="font-semibold">48 days</span>
+            <span>$1,559,954 pipeline</span>
+            <span>|</span>
+            <span>5 meetings/week</span>
+            <span>|</span>
+            <span>$17,435/day pace</span>
+            <span>|</span>
+            <span className="font-semibold">$70,000 at quota</span>
+          </div>
+        </div>
 
-          return (
-            <div key={card.recordId || idx} className="mb-4">
-              <BlockKitRenderer
-                blocks={cardBlocks}
-                onAction={(actionId) => {
-                  if (actionId.startsWith("secondary_")) {
-                    handleAction(card.secondaryAction, card);
-                  } else {
-                    handleAction(card.primaryAction, card);
-                  }
-                }}
-              />
+        {/* Deal Cards */}
+        <div className="space-y-3">
+          {/* Champion Silent */}
+          <div className="border border-[#e8e8e8] rounded-lg p-3 bg-white">
+            <div className="flex items-start gap-2">
+              <div className="w-8 h-8 rounded-full bg-[#ff4d4d] flex items-center justify-center text-white shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-[#1d1c1d] mb-1">
+                  Champion silent (14 days)
+                </div>
+                <div className="text-xs text-[#616061] mb-1">
+                  Acme Corp — $720k • Stage: Negotiation
+                </div>
+                <div className="text-xs text-[#616061] mb-3">
+                  Signal: Proposal viewed 14x, no reply
+                </div>
+                <button className="text-xs font-medium text-[#1264a3] hover:underline border border-[#1264a3] rounded px-3 py-1.5">
+                  ✨ Find alternate stakeholder
+                </button>
+              </div>
             </div>
-          );
-        })
-      )}
+          </div>
+
+          {/* Budget Objection */}
+          <div className="border border-[#e8e8e8] rounded-lg p-3 bg-white">
+            <div className="flex items-start gap-2">
+              <div className="w-8 h-8 rounded-full bg-[#ff4d4d] flex items-center justify-center text-white shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-[#1d1c1d] mb-1">
+                  Budget objection raised
+                </div>
+                <div className="text-xs text-[#616061] mb-1">
+                  Meridian Health — $420k • Stage: Discovery
+                </div>
+                <div className="text-xs text-[#616061] mb-3">
+                  Signal: CFO joined last call, asked about ROI
+                </div>
+                <button className="text-xs font-medium text-[#1264a3] hover:underline border border-[#1264a3] rounded px-3 py-1.5">
+                  ✨ Send ROI calculator
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Competitor Mentioned */}
+          <div className="border border-[#e8e8e8] rounded-lg p-3 bg-white">
+            <div className="flex items-start gap-2">
+              <div className="w-8 h-8 rounded-full bg-[#ff4d4d] flex items-center justify-center text-white shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-[#1d1c1d] mb-1">
+                  Competitor mentioned
+                </div>
+                <div className="text-xs text-[#616061] mb-1">
+                  Pinnacle Logistics — $380k • Stage: Evaluation
+                </div>
+                <div className="text-xs text-[#616061] mb-3">
+                  Signal: "Also talking to ServiceNow" in email
+                </div>
+                <button className="text-xs font-medium text-[#1264a3] hover:underline border border-[#1264a3] rounded px-3 py-1.5">
+                  ✨ Draft battle card response
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

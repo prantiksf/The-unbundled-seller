@@ -15,10 +15,10 @@ import { SLACK_TOKENS } from "@/design/slack-tokens";
 
 const T = SLACK_TOKENS;
 
-type TabId = "messages" | "history" | "files" | "proactive";
+type TabId = "seller-edge" | "messages" | "history" | "files";
 
 export function SlackbotPanel() {
-  const [activeTab, setActiveTab] = useState<TabId>("messages");
+  const [activeTab, setActiveTab] = useState<TabId>("seller-edge");
 
   return (
     <div
@@ -61,10 +61,10 @@ export function SlackbotPanel() {
 
       <div className="flex border-b shrink-0" style={{ borderColor: T.colors.border }}>
         {[
+          { id: "seller-edge" as const, label: "Seller Edge" },
           { id: "messages" as const, label: "Messages" },
           { id: "history" as const, label: "History" },
           { id: "files" as const, label: "Files" },
-          { id: "proactive" as const, label: "Proactive" },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -85,12 +85,8 @@ export function SlackbotPanel() {
       </div>
 
       <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
+        {activeTab === "seller-edge" && <SlackbotProactiveTab />}
         {activeTab === "messages" && <SlackbotMessagesTab />}
-        {activeTab === "proactive" && (
-          <div className="p-4 overflow-y-auto">
-            <SlackbotProactiveTab />
-          </div>
-        )}
         {(activeTab === "history" || activeTab === "files") && (
           <div className="p-4" style={{ fontSize: T.typography.small, color: T.colors.textSecondary }}>Coming soon.</div>
         )}
