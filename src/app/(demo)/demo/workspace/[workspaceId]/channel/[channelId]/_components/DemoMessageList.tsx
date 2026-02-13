@@ -1,8 +1,10 @@
 "use client";
 
 import type { DemoMessage } from "@/context/DemoDataContext";
+import { getMessageAvatarUrl } from "@/context/DemoDataContext";
 import { BlockKitRenderer } from "@/components/block-kit/BlockKitRenderer";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
+import Image from "next/image";
 
 const T = SLACK_TOKENS;
 
@@ -16,19 +18,42 @@ export function DemoMessageList({ messages }: DemoMessageListProps) {
   return (
     <div className="flex-1 overflow-y-auto p-4 flex flex-col-reverse">
       <div className="space-y-3 flex flex-col">
-        {reversed.map((msg) => (
+        {reversed.map((msg) => {
+          const avatarUrl = msg.authorImage ?? getMessageAvatarUrl(msg.author);
+          const size = T.iconSizes.messageAvatar;
+          return (
           <div key={msg.id} className="flex gap-3">
+            {avatarUrl ? (
+              <div
+                className="shrink-0 overflow-hidden"
+                style={{
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  borderRadius: `${T.radius.avatar}px`,
+                }}
+              >
+                <Image
+                  src={avatarUrl}
+                  alt=""
+                  width={size}
+                  height={size}
+                  className={`w-full h-full ${avatarUrl.includes("slackbot") ? "object-contain" : "object-cover"}`}
+                  unoptimized={avatarUrl.startsWith("/")}
+                />
+              </div>
+            ) : (
             <div
               className="shrink-0 flex items-center justify-center text-white text-sm font-semibold"
               style={{ 
-                width: `${T.iconSizes.messageAvatar}px`,
-                height: `${T.iconSizes.messageAvatar}px`,
+                width: `${size}px`,
+                height: `${size}px`,
                 backgroundColor: T.colors.avatarBg,
                 borderRadius: `${T.radius.avatar}px`
               }}
             >
               {msg.author.charAt(0)}
             </div>
+            )}
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2 mb-0.5">
                 <span className="font-bold text-[15px]" style={{ color: T.colors.text }}>
@@ -54,7 +79,8 @@ export function DemoMessageList({ messages }: DemoMessageListProps) {
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
         {reversed.length > 0 && (
           <div className="flex items-center gap-4 py-3">
             <div className="h-px flex-1" style={{ backgroundColor: T.colors.border }} />

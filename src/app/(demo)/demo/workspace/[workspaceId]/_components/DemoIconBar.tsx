@@ -11,46 +11,65 @@ import {
   IconPlus,
   IconHashtag,
 } from "@/components/icons";
+import { useNav } from "../layout";
 import { cn } from "@/lib/utils";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
 
 const T = SLACK_TOKENS;
 
 const navItems = [
-  { icon: IconHome, label: "Home" },
-  { icon: IconMessage, label: "DMs", badge: 231 },
-  { icon: IconBell, label: "Activity", active: true, badge: 3 },
-  { icon: IconFolder, label: "Files" },
-  { icon: IconBookmark, label: "Later" },
-  { icon: IconBot, label: "Agentforce" },
-  { icon: IconMore, label: "More" },
+  { icon: IconHome, label: "Home", id: "home" as const },
+  { icon: IconMessage, label: "DMs", id: "dms" as const, badge: 7 },
+  { icon: IconBell, label: "Activity", id: "activity" as const, badge: 3 },
+  { icon: IconFolder, label: "Files", id: "files" as const },
+  { icon: IconBookmark, label: "Later", id: "later" as const },
+  { icon: IconBot, label: "Agentforce", id: "agentforce" as const },
+  { icon: IconMore, label: "More", id: "more" as const },
 ];
 
 export function DemoIconBar() {
+  const { activeNav, setActiveNav } = useNav();
+
   return (
     <aside
-      className="w-[60px] flex-shrink-0 flex flex-col items-center py-4 gap-1"
-      style={{ backgroundColor: T.colors.sidebar }}
+      className="w-[72px] flex-shrink-0 flex flex-col items-center py-4 gap-0"
+      style={{ backgroundColor: T.colors.globalBg }}
     >
       <div className="mb-4 flex items-center justify-center" style={{ color: T.colors.themeSurface }}>
         <IconHashtag width={T.iconSizes.logo} height={T.iconSizes.logo} strokeWidth={2} />
       </div>
       {navItems.map((item) => {
         const Icon = item.icon;
+        const isActive = activeNav === item.id;
         return (
           <button
             key={item.label}
             type="button"
+            onClick={() => setActiveNav(item.id)}
             className={cn(
-              "relative flex flex-col items-center justify-center w-full py-2 rounded transition-colors",
-              item.active ? "bg-white/15" : "hover:bg-white/10"
+              "relative flex flex-col items-center justify-center w-full py-2 px-1 rounded transition-colors",
+              !isActive && "hover:bg-[#5a2b5e]"
             )}
+            style={{
+              backgroundColor: isActive ? T.colors.sidebarActive : undefined,
+            }}
             title={item.label}
           >
-            <Icon width={T.iconSizes.navIcon} height={T.iconSizes.navIcon} className="text-white" stroke="currentColor" />
+            <Icon
+              width={T.iconSizes.navIcon}
+              height={T.iconSizes.navIcon}
+              stroke="currentColor"
+              style={{ color: isActive ? "#D9D9D9" : "#A180A2" }}
+            />
+            <span
+              className="text-[10px] font-medium leading-tight truncate w-full text-center mt-0.5"
+              style={{ color: isActive ? "#D9D9D9" : "#A180A2" }}
+            >
+              {item.label}
+            </span>
             {item.badge && (
               <span
-                className="absolute top-1 right-[6px] min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full text-[11px] font-bold text-white"
+                className="absolute top-0.5 right-1 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full text-[10px] font-bold text-white"
                 style={{ backgroundColor: T.colors.notificationRed }}
               >
                 {item.badge}

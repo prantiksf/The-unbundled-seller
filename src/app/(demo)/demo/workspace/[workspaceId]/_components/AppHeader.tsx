@@ -1,0 +1,107 @@
+"use client";
+
+import { useSlackbot } from "../layout";
+import Image from "next/image";
+import { IconSearch } from "@/components/icons";
+import { SLACK_TOKENS } from "@/design/slack-tokens";
+
+const T = SLACK_TOKENS;
+
+export function AppHeader() {
+  const { isOpen, toggle } = useSlackbot();
+
+  return (
+    <header
+      className="h-12 shrink-0 flex items-center w-full"
+      style={{ backgroundColor: T.colors.globalBg }}
+    >
+      {/* Left: Window controls + Nav arrows */}
+      <div className="flex items-center gap-1 pl-3 pr-4 shrink-0">
+        {/* macOS-style window controls */}
+        <div className="flex items-center gap-1.5 mr-2">
+          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+        </div>
+        {/* Back / Forward */}
+        <button className="p-1.5 rounded hover:bg-white/10 text-white/80 transition-colors" title="Back">
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button className="p-1.5 rounded hover:bg-white/10 text-white/80 transition-colors" title="Forward">
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Center: Search bar */}
+      <div className="flex-1 flex items-center justify-center min-w-0 max-w-xl mx-4">
+        <div className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-white/10">
+          <IconSearch width={18} height={18} className="text-white/70 shrink-0" stroke="currentColor" />
+          <input
+            type="text"
+            placeholder="Search Salesforce"
+            className="flex-1 min-w-0 bg-transparent border-none outline-none text-white placeholder:text-white/60 text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Right: Slackbot + Call + Bell + Help + Give Feedback + User */}
+      <div className="flex items-center gap-1 pr-4 shrink-0">
+        {/* Slackbot Toggle - next to search */}
+        <button
+          type="button"
+          onClick={toggle}
+          className={`p-2 rounded hover:bg-white/10 transition-colors ${isOpen ? "bg-white/15" : ""}`}
+          title={isOpen ? "Close Slackbot" : "Open Slackbot"}
+        >
+          <Image src="/slackbot-logo.svg" alt="Slackbot" width={22} height={22} />
+        </button>
+
+        {/* Call */}
+        <button className="p-2 rounded hover:bg-white/10 text-white/90 transition-colors" title="Calls">
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+          </svg>
+        </button>
+
+        {/* Bell */}
+        <button className="p-2 rounded hover:bg-white/10 text-white/90 transition-colors relative" title="Notifications">
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        </button>
+
+        {/* Help */}
+        <button className="p-2 rounded hover:bg-white/10 text-white/90 transition-colors" title="Help">
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        </button>
+
+        {/* Give Feedback */}
+        <button className="flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 text-white/90 text-sm transition-colors">
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <span>Give Feedback</span>
+        </button>
+
+        {/* User */}
+        <button className="flex items-center gap-2 pl-2 pr-1 py-1.5 rounded hover:bg-white/10 text-white/90 transition-colors">
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold text-white">P</span>
+          </div>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+      </div>
+    </header>
+  );
+}

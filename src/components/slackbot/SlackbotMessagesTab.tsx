@@ -21,33 +21,59 @@ const T = SLACK_TOKENS;
 const PILL_ACTIONS = [
   { id: "discover", label: "Discover", icon: IconStar, query: "What would it take to close the gap?" },
   { id: "create", label: "Create", icon: IconPencil, query: "Prep me for my TechStart meeting" },
-  { id: "find", label: "Find", icon: IconSearch, query: "Tell me about Global Industries" },
+  { id: "find", label: "Find", icon: IconSearch, query: "Tell me about Acme Corp" },
   { id: "brainstorm", label: "Brainstorm", icon: IconLightbulb, query: "What's my risk today?" },
 ];
 
 const RESPONSE_BLOCKS: Record<string, SlackBlock[]> = {
-  "global industries": [
-    { type: "header", text: { type: "plain_text", text: "Global Industries — Enterprise Platform", emoji: true } },
+  "acme": [
+    { type: "header", text: { type: "plain_text", text: "Acme Corp — Enterprise Platform", emoji: true } },
     {
       type: "section",
       fields: [
-        { type: "mrkdwn", text: "*Amount:*\n$180,000" },
+        { type: "mrkdwn", text: "*Amount:*\n$200,000" },
         { type: "mrkdwn", text: "*Stage:*\nNegotiation" },
-        { type: "mrkdwn", text: "*Champion:*\nMarcus Lee" },
-        { type: "mrkdwn", text: "*Status:*\nSilent 12 days" },
+        { type: "mrkdwn", text: "*Champion:*\nMarcus Lee (departed)" },
+        { type: "mrkdwn", text: "*Commission at risk:*\n~$14,000" },
       ],
     },
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: "Champion has been silent for 12 days. No exec sponsor identified. Risk: deal may be cooling. I recommend reaching out to Marcus this week to re-engage.",
+        text: "Marcus Lee left Acme in the last 48 hours. I've identified *Priya Shah* (via Sarah Chen) and *Daniel Kim* (VP Procurement, attended your Q1 webinar) as potential new champions. Intro draft ready for review.",
       },
     },
     {
       type: "actions",
       elements: [
-        { type: "button", text: { type: "plain_text", text: "Review", emoji: true }, action_id: "review", style: "primary" },
+        { type: "button", text: { type: "plain_text", text: "Review draft", emoji: true }, action_id: "review", style: "primary" },
+        { type: "button", text: { type: "plain_text", text: "Dismiss", emoji: true }, action_id: "dismiss" },
+      ],
+    },
+  ],
+  "runners club": [
+    { type: "header", text: { type: "plain_text", text: "Runners Club — Summer Collection", emoji: true } },
+    {
+      type: "section",
+      fields: [
+        { type: "mrkdwn", text: "*Amount:*\n$720,000" },
+        { type: "mrkdwn", text: "*Stage:*\nClosed Won → reopened" },
+        { type: "mrkdwn", text: "*Champion:*\nLisa Park" },
+        { type: "mrkdwn", text: "*Signal:*\nCFO Jordan Hayes asked about ROI" },
+      ],
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: "CFO joined last call unexpectedly. Value justification deck drafted — addresses Jordan's specific ROI questions. Review and send?",
+      },
+    },
+    {
+      type: "actions",
+      elements: [
+        { type: "button", text: { type: "plain_text", text: "Review draft", emoji: true }, action_id: "review", style: "primary" },
         { type: "button", text: { type: "plain_text", text: "Dismiss", emoji: true }, action_id: "dismiss" },
       ],
     },
@@ -58,7 +84,7 @@ const RESPONSE_BLOCKS: Record<string, SlackBlock[]> = {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: "Your gap is about *$820K*. To close it in 45 days you'd need:\n• ~$1.2M more in qualified pipeline\n• ~8 meetings/week\n\nFocus on: (1) re-engaging Global Industries, (2) accelerating TechStart QBR, (3) adding 2–3 new discovery meetings.",
+        text: "Your gap is about *$90K*. To close it in 48 days you'd need:\n• ~$135K more in qualified pipeline\n• ~5 meetings/week\n\nFocus on: (1) Runners Club value justification, (2) Sporty Nation alternate stakeholder, (3) Acme recovery outreach.",
       },
     },
   ],
@@ -67,7 +93,7 @@ const RESPONSE_BLOCKS: Record<string, SlackBlock[]> = {
     {
       type: "section",
       fields: [
-        { type: "mrkdwn", text: "*Deal at risk*\nGlobal Industries ($180K)" },
+        { type: "mrkdwn", text: "*Deal at risk*\nAcme Corp ($200K) — champion departed" },
         { type: "mrkdwn", text: "*Meeting prep*\nTechStart QBR at 2 PM" },
         { type: "mrkdwn", text: "*Overdue*\n3 follow-ups" },
       ],
@@ -102,7 +128,7 @@ const RESPONSE_BLOCKS: Record<string, SlackBlock[]> = {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: "You have *3 overdue follow-ups*; oldest 9 days. Meridian Corp (James Rivera) and Greentech (Sarah Chen) are good candidates — both have had 7–8 days since last touch.",
+        text: "You have *3 overdue follow-ups*; oldest 9 days. Meridian Health (James Rivera) and Greentech (Priya Shah) are good candidates — both have had 7–8 days since last touch.",
       },
     },
     {
@@ -111,6 +137,44 @@ const RESPONSE_BLOCKS: Record<string, SlackBlock[]> = {
         { type: "button", text: { type: "plain_text", text: "Draft batch", emoji: true }, action_id: "draft", style: "primary" },
         { type: "button", text: { type: "plain_text", text: "Later", emoji: true }, action_id: "later" },
       ],
+    },
+  ],
+  "greentech": [
+    { type: "header", text: { type: "plain_text", text: "Greentech — SaaS Expansion", emoji: true } },
+    {
+      type: "section",
+      fields: [
+        { type: "mrkdwn", text: "*Amount:*\n$60,000" },
+        { type: "mrkdwn", text: "*Stage:*\nProposal" },
+        { type: "mrkdwn", text: "*Champion:*\nPriya Shah (active)" },
+        { type: "mrkdwn", text: "*Confidence:*\n78%" },
+      ],
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: "Priya said 'just send me the SOW and I'll get it signed this week' on last call. SOW draft ready for review.",
+      },
+    },
+  ],
+  "sporty nation": [
+    { type: "header", text: { type: "plain_text", text: "Sporty Nation — Back to School Promo", emoji: true } },
+    {
+      type: "section",
+      fields: [
+        { type: "mrkdwn", text: "*Amount:*\n$270,000" },
+        { type: "mrkdwn", text: "*Stage:*\nClosed Lost" },
+        { type: "mrkdwn", text: "*Champion:*\nDana Torres (silent 14 days)" },
+        { type: "mrkdwn", text: "*Signal:*\nProposal viewed 14x, no reply" },
+      ],
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: "Company doing layoffs — procurement likely frozen. I've identified 2 alternate stakeholders. Intro approach drafted.",
+      },
     },
   ],
 };

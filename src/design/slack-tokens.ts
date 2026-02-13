@@ -11,12 +11,18 @@ export const SLACK_TOKENS = {
     textTertiary: "#7c7a7f", // Core Content Tertiary
     textHighlight: "#454447", // Core Content Secondary
 
-    // From Figma: Window BG Primary - purple left sidebar
+    // Global fill - darkest purple for header, left nav, root (Slack aubergine base)
+    globalBg: "#4A154B",
+    // DM sidebar - subtle vertical gradient (slightly brighter top, darker bottom)
+    dmSidebarBg: "linear-gradient(180deg, #4F1B50 0%, #4A154B 25%, #451245 75%, #3F0E40 100%)",
+    dmSidebarBgSolid: "#4D1A4E", // Fallback / midpoint
+    // From Figma: Window BG Primary - purple left sidebar (legacy)
     iconBar: "#611f69", // Purple (Figma Window BG Primary)
     sidebar: "#611f69", // Same - purple
     sidebarDark: "#39063a", // Window BG Secondary
-    sidebarHover: "rgba(255, 255, 255, 0.1)",
-    sidebarActive: "rgba(255, 255, 255, 0.15)",
+    sidebarHover: "rgba(255, 255, 255, 0.08)", // Hover: #5a2b5e / rgba
+    sidebarActive: "#69356A", // Selected state (muted purple)
+    sidebarHoverBg: "#5a2b5e", // Hover background
     themeImportant: "#4a154b", // Content Important
     themeBase: "#eabdfb", // Base Important
     themeSurface: "#F9EDFF", // Inverse Primary
@@ -25,6 +31,13 @@ export const SLACK_TOKENS = {
     background: "#FFFFFF",
     backgroundAlt: "#f8f8f8", // Base Secondary
     activitySidebar: "#F9EDFF", // Figma Theme Surface Inverse Primary
+    dmSidebar: "#4D1A4E", // DM list base (slightly lighter than global for differentiation)
+    dmSidebarSelect: "#5a2b5e", // Selected item in DM list
+    dmSidebarHover: "#52215A", // Hover in DM list
+    dmSearchBg: "#5B2C5C", // Search input background in dark DM panel
+    dmSearchPlaceholder: "#AA81AB", // Placeholder text in dark DM panel
+    dmToggleTrack: "#6A376B", // Unreads toggle track
+    dmToggleThumb: "#AA81AB", // Unreads toggle thumb (active)
     border: "#e8e8e8",
     borderSecondary: "#5e5d6073",
     borderTertiary: "#5E5D60",
@@ -81,6 +94,8 @@ export const SLACK_TOKENS = {
     menu: "0 4px 12px 0 rgba(0, 0, 0, 0.1)",
     // From Figma: Level 3 - Modal Shadow
     modal: "0 18px 48px 0 rgba(0, 0, 0, 0.1)",
+    // Subtle deep shadow for left panel (casts onto content)
+    panelDeep: "4px 0 24px -4px rgba(0, 0, 0, 0.15), 2px 0 8px -2px rgba(0, 0, 0, 0.1)",
   },
 
   spacing: {
@@ -104,6 +119,7 @@ export const SLACK_TOKENS = {
     avatar: 4,
     button: 4,
     input: 8,
+    panel: 24, // Main panel rounding (left nav+sidebar, slackbot)
   },
 
   iconSizes: {
@@ -124,7 +140,7 @@ export const SLACK_TOKENS = {
   },
 
   dimensions: {
-    iconBarWidth: 60,
+    iconBarWidth: 72,
     sidebarWidth: 260,
     channelHeaderHeight: 49,
     slackbotPanelMinWidth: 300,

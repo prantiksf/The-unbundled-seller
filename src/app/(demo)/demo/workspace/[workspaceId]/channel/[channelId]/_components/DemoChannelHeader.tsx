@@ -1,6 +1,7 @@
 "use client";
 
 import { useDemoData } from "@/context/DemoDataContext";
+import { useSlackbot } from "../../../layout";
 import {
   IconUsers,
   IconHeadphones,
@@ -10,6 +11,7 @@ import {
   IconX,
   IconChevronDown,
 } from "@/components/icons";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
 
@@ -28,6 +30,7 @@ const tabs = [
 
 export function DemoChannelHeader({ channelId }: DemoChannelHeaderProps) {
   const { channels, dms } = useDemoData();
+  const { isOpen, toggle } = useSlackbot();
   const channel = channels.find((c) => c.id === channelId) ?? dms.find((d) => d.id === channelId);
   const name = channel?.name ?? channelId;
   const isChannel = !!channels.find((c) => c.id === channelId);
@@ -35,7 +38,7 @@ export function DemoChannelHeader({ channelId }: DemoChannelHeaderProps) {
 
   return (
     <header
-      className="flex flex-col shrink-0 border-b"
+      className="flex flex-col shrink-0 border-b bg-white"
       style={{ borderColor: T.colors.border }}
     >
       <div className="flex items-center justify-between px-4 h-[49px]">
@@ -53,6 +56,15 @@ export function DemoChannelHeader({ channelId }: DemoChannelHeaderProps) {
           </button>
           <button type="button" className="p-2 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Search">
             <IconSearch width={T.iconSizes.channelHeader} height={T.iconSizes.channelHeader} stroke="currentColor" />
+          </button>
+          <button 
+            type="button" 
+            className={cn("p-2 rounded hover:bg-[#f8f8f8]", isOpen && "bg-[#f8f8f8]")} 
+            style={{ color: T.colors.textSecondary }} 
+            title="Toggle Slackbot"
+            onClick={toggle}
+          >
+            <Image src="/slackbot-logo.svg" alt="Slackbot" width={18} height={18} />
           </button>
           <button type="button" className="p-2 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="More">
             <IconMore width={T.iconSizes.channelHeader} height={T.iconSizes.channelHeader} stroke="currentColor" />

@@ -7,6 +7,12 @@ const nextConfig = {
     env: {
         NEXT_PUBLIC_CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL || "https://demo-disabled.convex.cloud",
     },
+    images: {
+        remotePatterns: [
+            { protocol: "https", hostname: "randomuser.me", pathname: "/**" },
+            { protocol: "https", hostname: "ui-avatars.com", pathname: "/**" },
+        ],
+    },
 };
 
 export default nextConfig;

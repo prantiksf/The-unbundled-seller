@@ -6,7 +6,7 @@
         "author": "Rita Patel",
         "authorImage": null,
         "timestamp": "10:32 AM",
-        "body": "Hey team — checking in on Q3 pipeline. Slackbot has my daily brief ready.",
+        "body": "Hey team — checking in on Q3 pipeline. Vibeface has my daily brief ready.",
         "blocks": null
       },
       {
@@ -18,37 +18,20 @@
         "blocks": [
           {
             "type": "header",
-            "text": { "type": "plain_text", "text": "Your quota snapshot", "emoji": true }
-          },
-          {
-            "type": "section",
-            "fields": [
-              { "type": "mrkdwn", "text": "*On track:*\n$185,000" },
-              { "type": "mrkdwn", "text": "*Quota:*\n$1.0M" },
-              { "type": "mrkdwn", "text": "*Gap:*\n$815,000" },
-              { "type": "mrkdwn", "text": "*Commission at pace:*\n$12,950" }
-            ]
+            "text": { "type": "plain_text", "text": "TechStart QBR prep.", "emoji": true }
           },
           {
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": "You're at 19% of quota pace. 2 deals need your attention today — *Global Industries* and *TechStart QBR prep*. Open the Slackbot panel on the right →"
+              "text": "Your morning state: *$410K on track* / *$90K needs you* / *$0 blocked*\n\n2 deals need your attention: Runners Club (budget objection) and Sporty Nation (champion silent). Open the Slackbot panel on the right →"
             }
           },
           {
             "type": "actions",
             "elements": [
-              {
-                "type": "button",
-                "text": { "type": "plain_text", "text": "Review", "emoji": true },
-                "action_id": "review_quota"
-              },
-              {
-                "type": "button",
-                "text": { "type": "plain_text", "text": "Dismiss", "emoji": true },
-                "action_id": "dismiss_quota"
-              }
+              { "type": "button", "text": { "type": "plain_text", "text": "Review", "emoji": true }, "action_id": "review_quota", "style": "primary" },
+              { "type": "button", "text": { "type": "plain_text", "text": "Dismiss", "emoji": true }, "action_id": "dismiss_quota" }
             ]
           }
         ]
@@ -58,7 +41,7 @@
         "author": "Rita Patel",
         "authorImage": null,
         "timestamp": "10:35 AM",
-        "body": "What about Global Industries?",
+        "body": "What about the Acme situation? Marcus left.",
         "blocks": null
       },
       {
@@ -70,38 +53,29 @@
         "blocks": [
           {
             "type": "header",
-            "text": { "type": "plain_text", "text": "Deal at risk: Global Industries", "emoji": true }
+            "text": { "type": "plain_text", "text": "Champion departed: Acme Corp", "emoji": true }
           },
           {
             "type": "section",
             "fields": [
-              { "type": "mrkdwn", "text": "*Amount:*\n$180,000" },
+              { "type": "mrkdwn", "text": "*Amount:*\n$200,000" },
               { "type": "mrkdwn", "text": "*Stage:*\nNegotiation" },
-              { "type": "mrkdwn", "text": "*Champion:*\nMarcus Lee" },
-              { "type": "mrkdwn", "text": "*Last touch:*\n12 days ago" }
+              { "type": "mrkdwn", "text": "*Champion:*\nMarcus Lee (departed)" },
+              { "type": "mrkdwn", "text": "*Commission at risk:*\n~$14,000" }
             ]
           },
           {
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": "Champion has been silent for 12 days. No exec sponsor identified. Re-engaging now could salvage this deal."
+              "text": "Marcus Lee left Acme in the last 48 hours. Vibeface identified *Priya Shah* (via Sarah Chen) and *Daniel Kim* (VP Procurement, attended your Q1 webinar) as potential new champions. Intro draft ready for review."
             }
           },
           {
             "type": "actions",
             "elements": [
-              {
-                "type": "button",
-                "text": { "type": "plain_text", "text": "Review", "emoji": true },
-                "action_id": "review_global",
-                "style": "primary"
-              },
-              {
-                "type": "button",
-                "text": { "type": "plain_text", "text": "Dismiss", "emoji": true },
-                "action_id": "dismiss_global"
-              }
+              { "type": "button", "text": { "type": "plain_text", "text": "Review draft", "emoji": true }, "action_id": "review_acme", "style": "primary" },
+              { "type": "button", "text": { "type": "plain_text", "text": "Dismiss", "emoji": true }, "action_id": "dismiss_acme" }
             ]
           }
         ]
@@ -113,7 +87,7 @@
         "author": "Rita Patel",
         "authorImage": null,
         "timestamp": "9:15 AM",
-        "body": "TechStart QBR is at 2 PM today. Slackbot prepped my talking points.",
+        "body": "TechStart QBR is at 2 PM today. Vibeface prepped my talking points.",
         "blocks": null
       },
       {
@@ -127,21 +101,24 @@
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": "Meeting prep ready for *TechStart QBR* at 2:00 PM. Sarah Chen (champion) is active. Deal: $95K, Proposal stage."
+              "text": "Meeting prep ready for *TechStart QBR* at 2:00 PM. Sarah Chen (champion) is active. Deal: $95K, Proposal stage. Talking points: QBR recap, expansion options, timeline to close."
             }
           },
           {
             "type": "actions",
             "elements": [
-              {
-                "type": "button",
-                "text": { "type": "plain_text", "text": "View brief", "emoji": true },
-                "action_id": "view_brief",
-                "style": "primary"
-              }
+              { "type": "button", "text": { "type": "plain_text", "text": "View brief", "emoji": true }, "action_id": "view_brief", "style": "primary" }
             ]
           }
         ]
+      },
+      {
+        "id": "msg_s3",
+        "author": "Rita Patel",
+        "authorImage": null,
+        "timestamp": "9:45 AM",
+        "body": "SmartFit replied to the follow-up — positive tone. Vibeface handled it.",
+        "blocks": null
       }
     ],
     "q3-pipeline": [
@@ -150,8 +127,24 @@
         "author": "Rita Patel",
         "authorImage": null,
         "timestamp": "Yesterday",
-        "body": "Pipeline review for Q3. Gap is $815K — need to accelerate.",
+        "body": "Pipeline review for Q3. Gap is $100K — built a plan with Vibeface. Greentech, Runners Club, Meridian, Nova Corp in motion.",
         "blocks": null
+      },
+      {
+        "id": "msg_q2",
+        "author": "Slackbot",
+        "authorImage": null,
+        "timestamp": "Yesterday",
+        "body": null,
+        "blocks": [
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "Plan status: *$430K on track* after Greentech SOW sent. Runners Club intro from Sarah Chen — Jordan Hayes interested in 30-min call. Meridian and Apex still in motion."
+            }
+          }
+        ]
       }
     ],
     "slackbot": [
@@ -170,30 +163,86 @@
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": "Hi Rita! Here's what needs your attention:"
+              "text": "Hi Rita! Here's where you stand:"
             }
           },
           {
             "type": "section",
             "fields": [
-              { "type": "mrkdwn", "text": "*Deal at risk*\nGlobal Industries ($180K)" },
-              { "type": "mrkdwn", "text": "*Meeting prep*\nTechStart QBR at 2 PM" },
-              { "type": "mrkdwn", "text": "*Overdue*\n3 follow-ups" }
+              { "type": "mrkdwn", "text": "*On track*\n$410K" },
+              { "type": "mrkdwn", "text": "*Needs you*\n$90K (2 deals)" },
+              { "type": "mrkdwn", "text": "*Blocked*\n$0" },
+              { "type": "mrkdwn", "text": "*Overnight*\n4 follow-ups sent, 12 CRM updates" }
             ]
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "Focus: Runners Club (budget objection) and Sporty Nation (champion silent). Vibeface has drafts ready."
+            }
           },
           {
             "type": "actions",
             "elements": [
-              {
-                "type": "button",
-                "text": { "type": "plain_text", "text": "View details", "emoji": true },
-                "action_id": "view_details",
-                "style": "primary"
-              }
+              { "type": "button", "text": { "type": "plain_text", "text": "View Seller Edge", "emoji": true }, "action_id": "view_seller_edge", "style": "primary" }
             ]
           }
         ]
       }
+    ],
+    "deal-acme": [
+      { "id": "acme_1", "author": "Rita Patel", "authorImage": null, "timestamp": "Yesterday", "body": "Marcus was our champion — he left. Need to identify new stakeholders ASAP.", "blocks": null },
+      { "id": "acme_2", "author": "Slackbot", "authorImage": null, "timestamp": "Yesterday", "body": null, "blocks": [{ "type": "section", "text": { "type": "mrkdwn", "text": "*Acme Corp* — Champion departed\n\nMarcus Lee no longer at Acme. Vibeface identified:\n• *Priya Shah* — Sarah Chen intro, same team\n• *Daniel Kim* — VP Procurement, attended Q1 webinar\n\nIntro draft ready. Commission at risk: ~$14K." } }] },
+      { "id": "acme_3", "author": "Rita Patel", "authorImage": null, "timestamp": "Today", "body": "Sent intro to Priya via Sarah. Daniel Kim — can we pull the webinar attendee list?", "blocks": null }
+    ],
+    "deal-runners": [
+      { "id": "run_1", "author": "Rita Patel", "authorImage": null, "timestamp": "Yesterday", "body": "CFO Jordan Hayes joined the last call. Asked about ROI. Proposal opened 6x since.", "blocks": null },
+      { "id": "run_2", "author": "Slackbot", "authorImage": null, "timestamp": "Today", "body": null, "blocks": [{ "type": "section", "text": { "type": "mrkdwn", "text": "*Runners Club* — Budget objection\n\nValue justification deck drafted. Lisa Park (champion) still engaged. Jordan Hayes (CFO) needs ROI clarity before sign-off." } }, { "type": "actions", "elements": [{ "type": "button", "text": { "type": "plain_text", "text": "Review draft", "emoji": true }, "action_id": "review_runners", "style": "primary" }] }] },
+      { "id": "run_3", "author": "Rita Patel", "authorImage": null, "timestamp": "10:15 AM", "body": "30-min call with Jordan set for 4 PM. Vibeface prepping the value deck.", "blocks": null }
+    ],
+    "deal-greentech": [
+      { "id": "gt_1", "author": "Rita Patel", "authorImage": null, "timestamp": "Yesterday", "body": "Priya said 'just send me the SOW and I'll get it signed this week.' SOW sent.", "blocks": null },
+      { "id": "gt_2", "author": "Slackbot", "authorImage": null, "timestamp": "Yesterday", "body": null, "blocks": [{ "type": "section", "text": { "type": "mrkdwn", "text": "*Greentech* — $60K, Proposal stage\n\nChampion Priya Shah actively closing. SOW sent. No risk signals. On track for commit." } }] },
+      { "id": "gt_3", "author": "Rita Patel", "authorImage": null, "timestamp": "Today", "body": "Following up with Priya on SOW. She's been responsive.", "blocks": null }
+    ],
+    "deal-sporty": [
+      { "id": "sp_1", "author": "Rita Patel", "authorImage": null, "timestamp": "2 days ago", "body": "Dana went silent. Proposal viewed 14x, no reply. Company doing layoffs — procurement likely frozen.", "blocks": null },
+      { "id": "sp_2", "author": "Slackbot", "authorImage": null, "timestamp": "Yesterday", "body": null, "blocks": [{ "type": "section", "text": { "type": "mrkdwn", "text": "*Sporty Nation* — Champion silent 14 days\n\nVibeface identified 2 alternate stakeholders: Mike Torres (Ops) and Jen Walsh (Marketing). Both engaged on LinkedIn. Outreach draft ready." } }] },
+      { "id": "sp_3", "author": "Rita Patel", "authorImage": null, "timestamp": "Today", "body": "Reaching out to Mike Torres. Dana's team might be in flux.", "blocks": null }
+    ],
+    "deal-techstart": [
+      { "id": "ts_1", "author": "Rita Patel", "authorImage": null, "timestamp": "Yesterday", "body": "QBR at 2 PM tomorrow. Sarah Chen is our champion. $95K expansion on the table.", "blocks": null },
+      { "id": "ts_2", "author": "Slackbot", "authorImage": null, "timestamp": "Today", "body": null, "blocks": [{ "type": "section", "text": { "type": "mrkdwn", "text": "*TechStart QBR* — 2:00 PM today\n\nSarah Chen (champion) active. Talking points: QBR recap, expansion options, timeline to close. Brief ready in Seller Edge." } }, { "type": "actions", "elements": [{ "type": "button", "text": { "type": "plain_text", "text": "View brief", "emoji": true }, "action_id": "view_techstart_brief", "style": "primary" }] }] },
+      { "id": "ts_3", "author": "Rita Patel", "authorImage": null, "timestamp": "9:30 AM", "body": "Reviewed the brief. Ready for the call.", "blocks": null }
+    ],
+    "sarah-chen": [
+      { "id": "sc_1", "author": "Sarah Chen", "authorImage": null, "timestamp": "Yesterday", "body": "Rita — happy to intro you to Priya at Acme. She's on the same team I used to work with. Also, Jordan at Runners Club is interested in a 30-min call.", "blocks": null },
+      { "id": "sc_2", "author": "Rita Patel", "authorImage": null, "timestamp": "Yesterday", "body": "Amazing, thank you! Can you send the intro to Priya today? And I'll set up the Jordan call.", "blocks": null },
+      { "id": "sc_3", "author": "Sarah Chen", "authorImage": null, "timestamp": "Yesterday", "body": "Done. Priya should have it. Good luck with TechStart tomorrow — Sarah (the other Sarah!) is great.", "blocks": null }
+    ],
+    "priya-shah": [
+      { "id": "ps_1", "author": "Priya Shah", "authorImage": null, "timestamp": "Today", "body": "Got the intro from Sarah. The SOW looks good — running it through legal. Should have an answer by Friday.", "blocks": null },
+      { "id": "ps_2", "author": "Rita Patel", "authorImage": null, "timestamp": "10:20 AM", "body": "Thanks Priya! Let me know if legal has any questions. Happy to jump on a call.", "blocks": null }
+    ],
+    "jordan-hayes": [
+      { "id": "jh_1", "author": "Jordan Hayes", "authorImage": null, "timestamp": "Yesterday", "body": "Rita — Lisa mentioned the Runners Club proposal. I'd like to understand the ROI before we move forward. Can we do 30 mins tomorrow?", "blocks": null },
+      { "id": "jh_2", "author": "Rita Patel", "authorImage": null, "timestamp": "Yesterday", "body": "Absolutely. How does 4 PM work? I'll send over a value deck beforehand.", "blocks": null },
+      { "id": "jh_3", "author": "Jordan Hayes", "authorImage": null, "timestamp": "Today", "body": "4 PM works. Send the deck when you have it.", "blocks": null }
+    ],
+    "dana-torres": [
+      { "id": "dt_1", "author": "Dana Torres", "authorImage": null, "timestamp": "2 weeks ago", "body": "Thanks for the proposal. I'll share with the team and get back to you.", "blocks": null },
+      { "id": "dt_2", "author": "Rita Patel", "authorImage": null, "timestamp": "1 week ago", "body": "Hi Dana — checking in on the Sporty Nation proposal. Happy to answer any questions.", "blocks": null },
+      { "id": "dt_3", "author": "Rita Patel", "authorImage": null, "timestamp": "3 days ago", "body": "Following up. Let me know if there's a better time to connect.", "blocks": null }
+    ],
+    "marcus-lee": [
+      { "id": "ml_1", "author": "Marcus Lee", "authorImage": null, "timestamp": "1 week ago", "body": "Rita — the Acme deal is looking good. I'm pushing for Q3 close. Will loop in legal next week.", "blocks": null },
+      { "id": "ml_2", "author": "Rita Patel", "authorImage": null, "timestamp": "1 week ago", "body": "Thanks Marcus! Appreciate your support. Let me know when legal is in the loop.", "blocks": null }
+    ],
+    "lisa-park": [
+      { "id": "lp_1", "author": "Lisa Park", "authorImage": null, "timestamp": "Yesterday", "body": "Jordan (our CFO) wants to understand ROI before signing. I've connected you two — he's open to a 30-min call.", "blocks": null },
+      { "id": "lp_2", "author": "Rita Patel", "authorImage": null, "timestamp": "Yesterday", "body": "Perfect, thank you Lisa! I'll send a value deck and set up the call.", "blocks": null },
+      { "id": "lp_3", "author": "Lisa Park", "authorImage": null, "timestamp": "Today", "body": "Sounds good. He's detail-oriented but fair. The deck will help.", "blocks": null }
     ]
   }
 }
