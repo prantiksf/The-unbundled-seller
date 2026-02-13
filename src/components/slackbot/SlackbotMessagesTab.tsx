@@ -197,7 +197,7 @@ export function SlackbotMessagesTab() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
             <div className="w-[120px] h-[120px] mb-6 flex items-center justify-center">
-              <Image src="/slackbot/slackbot-logo.svg" alt="Slackbot" width={120} height={120} />
+              <Image src="/slackbot-logo.svg" alt="Slackbot" width={120} height={120} />
             </div>
             <h2 className="text-[18px] font-bold text-[#1d1c1d] mb-2">
               Good morning, {DEMO_USER_NAME}!
@@ -252,65 +252,51 @@ export function SlackbotMessagesTab() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="border-t shrink-0" style={{ borderColor: "#e8e8e8" }}>
-        <div className="flex flex-wrap gap-1 p-2">
-          <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-[#f8f8f8]" title="Bold">
-            <Bold size={14} />
+      <form onSubmit={handleSubmit} className="border-t shrink-0" style={{ borderColor: T.colors.border }}>
+        <div className="flex flex-wrap gap-1 px-3 py-2 border-b" style={{ borderColor: T.colors.border }}>
+          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Bold">
+            <Bold size={16} />
           </button>
-          <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-[#f8f8f8]" title="Italic">
-            <Italic size={14} />
+          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Italic">
+            <Italic size={16} />
           </button>
-          <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-[#f8f8f8]" title="Underline">
-            <Underline size={14} />
+          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Underline">
+            <Underline size={16} />
           </button>
-          <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-[#f8f8f8]" title="Strikethrough">
-            <Strikethrough size={14} />
+          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Strikethrough">
+            <Strikethrough size={16} />
           </button>
-          <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-[#f8f8f8]" title="Link">
-            <Link size={14} />
+          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Link">
+            <Link size={16} />
           </button>
-          <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-[#f8f8f8]" title="Bullet list">
-            <List size={14} />
+          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Bullet list">
+            <List size={16} />
           </button>
-          <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-[#f8f8f8]" title="Numbered list">
-            <ListOrdered size={14} />
+          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Numbered list">
+            <ListOrdered size={16} />
           </button>
-          <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-[#f8f8f8]" title="Code block">
-            <Code size={14} />
+          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Code block">
+            <Code size={16} />
           </button>
         </div>
-        <div
-          className="flex items-center gap-2 mx-2 mb-2 px-3 py-2 rounded-lg border min-h-[44px]"
-          style={{ borderColor: "#e8e8e8", backgroundColor: "#f8f8f8" }}
-        >
+        <div className="flex items-center gap-2 px-3 py-3">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Reply..."
-            className="flex-1 min-w-0 bg-transparent text-[15px] placeholder:text-[#616061] focus:outline-none"
+            className="flex-1 min-w-0 bg-transparent focus:outline-none"
+            style={{ fontSize: T.typography.body, color: T.colors.text }}
           />
-          <div className="flex items-center gap-0.5 shrink-0">
-            <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-white/80" title="Add">
-              <IconPlus width={16} height={16} stroke="currentColor" />
+          <div className="flex items-center gap-1 shrink-0">
+            <button type="button" className="p-1 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Attachment">
+              <Paperclip size={18} />
             </button>
-            <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-white/80" title="Format">
-              <Type size={16} />
+            <button type="submit" className="p-1 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.link }} title="Send">
+              <Send size={18} />
             </button>
-            <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-white/80" title="Emoji">
-              <Smile size={16} />
-            </button>
-            <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-white/80" title="Mention">
-              <AtSign size={16} />
-            </button>
-            <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-white/80" title="Attachment">
-              <Paperclip size={16} />
-            </button>
-            <button type="submit" className="p-1.5 rounded text-[#1264a3] hover:bg-white/80" title="Send">
-              <Send size={16} />
-            </button>
-            <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-white/80" title="More">
-              <ChevronDown size={16} stroke="currentColor" />
+            <button type="button" className="p-1 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="More">
+              <ChevronDown size={18} />
             </button>
           </div>
         </div>
