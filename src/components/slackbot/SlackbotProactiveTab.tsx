@@ -198,7 +198,7 @@ export function SlackbotProactiveTab() {
               {(data.autonomous_deals as Array<Record<string, unknown>>).map((d, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs text-[#616061] border border-[#e8e8e8] rounded-lg p-2 bg-[#f8f8f8]">
                   <span className="text-base">⚙️</span>
-                  <span className="font-medium text-[#1d1c1d]">{d.account} ({formatCurrency((d.amount as number) || 0)})</span>
+                  <span className="font-medium text-[#1d1c1d]">{String(d.account ?? "")} ({formatCurrency((d.amount as number) || 0)})</span>
                   <span>—</span>
                   <span>{d.action as string}</span>
                 </div>
