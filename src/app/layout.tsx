@@ -31,7 +31,7 @@ export default function RootLayout({
     <ConvexClientProvider>
       <JotaiProvider>
         <Toaster />
-        <Modals />
+        {hasConvex && <Modals />}
         <NuqsAdapter>{children}</NuqsAdapter>
       </JotaiProvider>
     </ConvexClientProvider>
