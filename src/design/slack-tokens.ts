@@ -11,10 +11,9 @@ export const SLACK_TOKENS = {
     textTertiary: "#7c7a7f", // Core Content Tertiary
     textHighlight: "#454447", // Core Content Secondary
 
-    // From Figma / Reference: Left icon bar is DARK GREY
-    iconBar: "#1a1d21", // Dark grey (left nav strip)
-    // Theme purple for avatars, accents
-    sidebar: "#611f69", // Window BG Primary (channel avatars)
+    // From Figma: Window BG Primary - purple left sidebar
+    iconBar: "#611f69", // Purple (Figma Window BG Primary)
+    sidebar: "#611f69", // Same - purple
     sidebarDark: "#39063a", // Window BG Secondary
     sidebarHover: "rgba(255, 255, 255, 0.1)",
     sidebarActive: "rgba(255, 255, 255, 0.15)",
@@ -25,7 +24,7 @@ export const SLACK_TOKENS = {
     // From Figma: Core
     background: "#FFFFFF",
     backgroundAlt: "#f8f8f8", // Base Secondary
-    activitySidebar: "#f5f5f5", // Light grey for Activity panel (matches reference)
+    activitySidebar: "#F9EDFF", // Figma Theme Surface Inverse Primary
     border: "#e8e8e8",
     borderSecondary: "#5e5d6073",
     borderTertiary: "#5E5D60",

@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import {
-  Star,
-  Pencil,
-  X,
-  Maximize2,
-  Minimize2,
-  Plus,
-} from "lucide-react";
+  IconStar,
+  IconPencil,
+  IconX,
+  IconPlus,
+  IconHashtag,
+} from "@/components/icons";
 import { SlackbotProactiveTab } from "./SlackbotProactiveTab";
 import { SlackbotMessagesTab } from "./SlackbotMessagesTab";
 import { cn } from "@/lib/utils";
@@ -33,24 +31,28 @@ export function SlackbotPanel() {
     >
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: T.colors.border }}>
         <div className="flex items-center gap-2">
-          <Image src="/logo.svg" alt="" width={24} height={24} className="object-contain" />
-          <span className="font-semibold text-[15px]" style={{ color: T.colors.text }}>Slackbot</span>
+          <IconHashtag width={T.iconSizes.slackbotLogo} height={T.iconSizes.slackbotLogo} style={{ color: T.colors.themeImportant }} stroke="currentColor" />
+          <span className="font-semibold" style={{ fontSize: T.typography.body, color: T.colors.text }}>Slackbot</span>
         </div>
         <div className="flex items-center gap-0.5">
           <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Star">
-            <Star size={16} />
+            <IconStar width={T.iconSizes.slackbotHeader} height={T.iconSizes.slackbotHeader} stroke="currentColor" />
           </button>
           <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Edit">
-            <Pencil size={16} />
+            <IconPencil width={T.iconSizes.slackbotHeader} height={T.iconSizes.slackbotHeader} stroke="currentColor" />
           </button>
           <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Close">
-            <X size={16} />
+            <IconX width={T.iconSizes.slackbotHeader} height={T.iconSizes.slackbotHeader} stroke="currentColor" />
           </button>
           <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Maximize">
-            <Maximize2 size={16} />
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+            </svg>
           </button>
           <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Minimize">
-            <Minimize2 size={16} />
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
           </button>
         </div>
       </div>
@@ -67,16 +69,16 @@ export function SlackbotPanel() {
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "px-3 py-2.5 text-[13px] font-medium transition-colors",
+              "px-3 py-2.5 font-medium transition-colors",
               activeTab === tab.id ? "border-b-2" : "hover:text-[#1d1c1d]"
             )}
-            style={activeTab === tab.id ? { color: T.colors.link, borderBottomColor: T.colors.link } : { color: T.colors.textSecondary }}
+            style={activeTab === tab.id ? { color: T.colors.link, borderBottomColor: T.colors.link, fontSize: T.typography.small } : { color: T.colors.textSecondary, fontSize: T.typography.small }}
           >
             {tab.label}
           </button>
         ))}
         <button type="button" className="p-2 hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Add">
-          <Plus size={14} />
+          <IconPlus width={T.iconSizes.slackbotTab} height={T.iconSizes.slackbotTab} stroke="currentColor" />
         </button>
       </div>
 
@@ -88,7 +90,7 @@ export function SlackbotPanel() {
           </div>
         )}
         {(activeTab === "history" || activeTab === "files") && (
-          <div className="p-4 text-[13px]" style={{ color: T.colors.textSecondary }}>Coming soon.</div>
+          <div className="p-4" style={{ fontSize: T.typography.small, color: T.colors.textSecondary }}>Coming soon.</div>
         )}
       </div>
     </div>

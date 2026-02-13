@@ -1,45 +1,39 @@
 "use client";
 
 import {
-  Home,
-  MessagesSquare,
-  Bell,
-  Folder,
-  Bookmark,
-  Bot,
-  MoreHorizontal,
-  Plus,
-} from "lucide-react";
-import Image from "next/image";
+  IconHome,
+  IconMessage,
+  IconBell,
+  IconFolder,
+  IconBookmark,
+  IconBot,
+  IconMore,
+  IconPlus,
+  IconHashtag,
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
 
 const T = SLACK_TOKENS;
 
 const navItems = [
-  { icon: Home, label: "Home" },
-  { icon: MessagesSquare, label: "DMs", badge: 231 },
-  { icon: Bell, label: "Activity", active: true, badge: 3 },
-  { icon: Folder, label: "Files" },
-  { icon: Bookmark, label: "Later" },
-  { icon: Bot, label: "Agentforce" },
-  { icon: MoreHorizontal, label: "More" },
+  { icon: IconHome, label: "Home" },
+  { icon: IconMessage, label: "DMs", badge: 231 },
+  { icon: IconBell, label: "Activity", active: true, badge: 3 },
+  { icon: IconFolder, label: "Files" },
+  { icon: IconBookmark, label: "Later" },
+  { icon: IconBot, label: "Agentforce" },
+  { icon: IconMore, label: "More" },
 ];
 
 export function DemoIconBar() {
   return (
     <aside
       className="w-[60px] flex-shrink-0 flex flex-col items-center py-4 gap-1"
-      style={{ backgroundColor: T.colors.iconBar }}
+      style={{ backgroundColor: T.colors.sidebar }}
     >
-      <div className="mb-4">
-        <Image
-          src="/logo.svg"
-          alt="Salesforce"
-          width={28}
-          height={28}
-          className="object-contain"
-        />
+      <div className="mb-4 flex items-center justify-center" style={{ color: T.colors.themeSurface }}>
+        <IconHashtag width={T.iconSizes.logo} height={T.iconSizes.logo} strokeWidth={2} />
       </div>
       {navItems.map((item) => {
         const Icon = item.icon;
@@ -53,7 +47,7 @@ export function DemoIconBar() {
             )}
             title={item.label}
           >
-            <Icon size={T.iconSizes.navIcon} className="text-white" />
+            <Icon width={T.iconSizes.navIcon} height={T.iconSizes.navIcon} className="text-white" stroke="currentColor" />
             {item.badge && (
               <span
                 className="absolute top-1 right-[6px] min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full text-[11px] font-bold text-white"
@@ -71,7 +65,7 @@ export function DemoIconBar() {
         className="flex items-center justify-center w-8 h-8 rounded-full border border-white/30 text-white hover:bg-white/10 transition-colors"
         title="Add"
       >
-        <Plus size={T.iconSizes.navIconPlus} />
+        <IconPlus width={T.iconSizes.navIconPlus} height={T.iconSizes.navIconPlus} stroke="currentColor" />
       </button>
       <div
         className="w-8 h-8 bg-white/20 flex items-center justify-center mt-2"

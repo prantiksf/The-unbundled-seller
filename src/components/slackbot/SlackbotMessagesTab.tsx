@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import {
-  Star,
-  Pencil,
-  Search,
-  Lightbulb,
-  Plus,
+  IconStar,
+  IconPencil,
+  IconSearch,
+  IconLightbulb,
+  IconPlus,
+  IconHashtag,
+} from "@/components/icons";
+import {
   Type,
   Smile,
   AtSign,
@@ -32,10 +34,10 @@ import { SLACK_TOKENS } from "@/design/slack-tokens";
 const T = SLACK_TOKENS;
 
 const PILL_ACTIONS = [
-  { id: "discover", label: "Discover", icon: Star, query: "What would it take to close the gap?" },
-  { id: "create", label: "Create", icon: Pencil, query: "Prep me for my TechStart meeting" },
-  { id: "find", label: "Find", icon: Search, query: "Tell me about Global Industries" },
-  { id: "brainstorm", label: "Brainstorm", icon: Lightbulb, query: "What's my risk today?" },
+  { id: "discover", label: "Discover", icon: IconStar, query: "What would it take to close the gap?" },
+  { id: "create", label: "Create", icon: IconPencil, query: "Prep me for my TechStart meeting" },
+  { id: "find", label: "Find", icon: IconSearch, query: "Tell me about Global Industries" },
+  { id: "brainstorm", label: "Brainstorm", icon: IconLightbulb, query: "What's my risk today?" },
 ];
 
 const RESPONSE_BLOCKS: Record<string, SlackBlock[]> = {
@@ -194,8 +196,8 @@ export function SlackbotMessagesTab() {
       <div className="flex-1 overflow-y-auto space-y-4 p-4 min-h-0">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <div className="w-[120px] h-[120px] mb-6 flex items-center justify-center">
-              <Image src="/logo.svg" alt="" width={120} height={120} className="object-contain" />
+            <div className="w-[120px] h-[120px] mb-6 flex items-center justify-center" style={{ color: T.colors.themeImportant }}>
+              <IconHashtag width={T.iconSizes.mascot} height={T.iconSizes.mascot} strokeWidth={1.5} stroke="currentColor" />
             </div>
             <h2 className="text-[18px] font-bold text-[#1d1c1d] mb-2">
               Good morning, {DEMO_USER_NAME}!
@@ -216,7 +218,7 @@ export function SlackbotMessagesTab() {
                     color: T.colors.text,
                   }}
                 >
-                  <Icon size={16} style={{ color: T.colors.textSecondary }} />
+                  <Icon width={16} height={16} style={{ color: T.colors.textSecondary }} stroke="currentColor" />
                   {label}
                 </button>
               ))}
@@ -290,7 +292,7 @@ export function SlackbotMessagesTab() {
           />
           <div className="flex items-center gap-0.5 shrink-0">
             <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-white/80" title="Add">
-              <Plus size={16} />
+              <IconPlus width={16} height={16} stroke="currentColor" />
             </button>
             <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-white/80" title="Format">
               <Type size={16} />
@@ -308,7 +310,7 @@ export function SlackbotMessagesTab() {
               <Send size={16} />
             </button>
             <button type="button" className="p-1.5 rounded text-[#616061] hover:bg-white/80" title="More">
-              <ChevronDown size={16} />
+              <ChevronDown size={16} stroke="currentColor" />
             </button>
           </div>
         </div>

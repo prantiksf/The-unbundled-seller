@@ -4,16 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
-  Search,
-  Square,
-  LayoutGrid,
-  Filter,
-  List,
-  Copy,
-  Link as LinkIcon,
-  MoreVertical,
-  Plus,
-} from "lucide-react";
+  IconSearch,
+  IconSquare,
+  IconLayoutGrid,
+  IconFilter,
+  IconList,
+  IconCopy,
+  IconLink,
+  IconMoreVertical,
+  IconPlus,
+} from "@/components/icons";
 import { useDemoData } from "@/context/DemoDataContext";
 import { cn } from "@/lib/utils";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
@@ -41,18 +41,18 @@ export function DemoSidebar() {
   return (
     <aside className="w-[260px] flex-shrink-0 flex flex-col border-r" style={{ backgroundColor: T.colors.activitySidebar, borderColor: T.colors.border }}>
       <div className="px-3 py-3 border-b flex items-center gap-2" style={{ borderColor: T.colors.border }}>
-        <span className="font-semibold text-[15px]" style={{ color: T.colors.text }}>Activity</span>
-        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded" style={{ backgroundColor: T.colors.betaBadgeBg, color: T.colors.link }}>Beta</span>
+        <span className="font-semibold" style={{ fontSize: T.typography.body, color: T.colors.text }}>Activity</span>
+        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded" style={{ backgroundColor: T.colors.betaBadgeBg, color: T.colors.betaBadgeText }}>Beta</span>
       </div>
 
       <div className="flex items-center gap-1 px-2 py-2 border-b" style={{ borderColor: T.colors.border }}>
         <button
           type="button"
           className={cn(
-            "px-3 py-1.5 text-sm font-medium rounded",
+            "px-3 py-1.5 font-medium rounded",
             filter === "all" ? "" : "hover:bg-[#f8f8f8]"
           )}
-          style={filter === "all" ? { backgroundColor: T.colors.backgroundAlt, color: T.colors.text } : { color: T.colors.textSecondary }}
+          style={filter === "all" ? { backgroundColor: T.colors.backgroundAlt, color: T.colors.text, fontSize: T.typography.small } : { color: T.colors.textSecondary, fontSize: T.typography.small }}
           onClick={() => setFilter("all")}
         >
           All
@@ -60,45 +60,46 @@ export function DemoSidebar() {
         <button
           type="button"
           className={cn(
-            "px-3 py-1.5 text-sm font-medium rounded",
+            "px-3 py-1.5 font-medium rounded",
             filter === "dms" ? "" : "hover:bg-[#f8f8f8]"
           )}
-          style={filter === "dms" ? { backgroundColor: T.colors.backgroundAlt, color: T.colors.text } : { color: T.colors.textSecondary }}
+          style={filter === "dms" ? { backgroundColor: T.colors.backgroundAlt, color: T.colors.text, fontSize: T.typography.small } : { color: T.colors.textSecondary, fontSize: T.typography.small }}
           onClick={() => setFilter("dms")}
         >
           DMs
         </button>
         <button
           type="button"
-          className="p-1.5 rounded text-[#616061] hover:bg-[#f8f8f8]"
+          className="p-1.5 rounded hover:bg-[#f8f8f8]"
+          style={{ color: T.colors.textSecondary }}
           title="Add"
         >
-          <Plus size={16} />
+          <IconPlus width={T.iconSizes.channelHeader} height={T.iconSizes.channelHeader} stroke="currentColor" />
         </button>
       </div>
 
       <div className="flex items-center gap-1 px-2 py-1.5 border-b" style={{ borderColor: T.colors.border }}>
         <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Checkbox">
-          <Square size={14} strokeWidth={2} />
+          <IconSquare width={14} height={14} stroke="currentColor" strokeWidth={2} />
         </button>
         <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Grid">
-          <LayoutGrid size={14} />
+          <IconLayoutGrid width={14} height={14} stroke="currentColor" />
         </button>
         <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Filter">
-          <Filter size={14} />
+          <IconFilter width={14} height={14} stroke="currentColor" />
         </button>
         <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="List">
-          <List size={14} />
+          <IconList width={14} height={14} stroke="currentColor" />
         </button>
         <div className="flex-1 flex items-center gap-1.5 px-2 py-1 rounded" style={{ backgroundColor: T.colors.backgroundAlt }}>
-          <Search size={14} className="shrink-0" style={{ color: T.colors.textSecondary }} />
+          <IconSearch width={14} height={14} className="shrink-0" style={{ color: T.colors.textSecondary }} stroke="currentColor" />
           <input
             type="text"
             placeholder="Search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 min-w-0 text-sm bg-transparent focus:outline-none"
-            style={{ color: T.colors.text }}
+            className="flex-1 min-w-0 bg-transparent focus:outline-none"
+            style={{ color: T.colors.text, fontSize: T.typography.small }}
           />
         </div>
       </div>
@@ -122,27 +123,27 @@ export function DemoSidebar() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1">
-                  <span className="text-[15px] truncate font-medium" style={{ color: T.colors.text }}>
+                  <span className="truncate font-medium" style={{ fontSize: T.typography.body, color: T.colors.text }}>
                     {item.type === "channel" ? `#${item.name}` : item.name}
                   </span>
                 </div>
                 {preview && (
-                  <p className="text-[13px] truncate mt-0.5" style={{ color: T.colors.textSecondary }}>{preview}</p>
+                  <p className="truncate mt-0.5" style={{ fontSize: T.typography.small, color: T.colors.textSecondary }}>{preview}</p>
                 )}
               </div>
               <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button type="button" className="p-1 rounded hover:bg-white/80" title="Copy">
-                  <Copy size={12} style={{ color: T.colors.textSecondary }} />
+                  <IconCopy width={12} height={12} style={{ color: T.colors.textSecondary }} stroke="currentColor" />
                 </button>
                 <button type="button" className="p-1 rounded hover:bg-white/80" title="Link">
-                  <LinkIcon size={12} style={{ color: T.colors.textSecondary }} />
+                  <IconLink width={12} height={12} style={{ color: T.colors.textSecondary }} stroke="currentColor" />
                 </button>
                 <button type="button" className="p-1 rounded hover:bg-white/80" title="More">
-                  <MoreVertical size={12} style={{ color: T.colors.textSecondary }} />
+                  <IconMoreVertical width={12} height={12} style={{ color: T.colors.textSecondary }} stroke="currentColor" />
                 </button>
               </div>
               {timestamp && (
-                <span className="text-[12px] shrink-0 mt-0.5" style={{ color: T.colors.textSecondary }}>{timestamp}</span>
+                <span className="shrink-0 mt-0.5" style={{ fontSize: T.typography.smaller, color: T.colors.textSecondary }}>{timestamp}</span>
               )}
             </Link>
           );

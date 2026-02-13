@@ -2,14 +2,14 @@
 
 import { useDemoData } from "@/context/DemoDataContext";
 import {
-  Users,
-  Headphones,
-  Pin,
-  Search,
-  MoreHorizontal,
-  X,
-  ChevronDown,
-} from "lucide-react";
+  IconUsers,
+  IconHeadphones,
+  IconPin,
+  IconSearch,
+  IconMore,
+  IconX,
+  IconChevronDown,
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
 
@@ -42,23 +42,23 @@ export function DemoChannelHeader({ channelId }: DemoChannelHeaderProps) {
         <span className="text-[18px] font-semibold" style={{ color: T.colors.text }}>{displayName}</span>
         <div className="flex items-center gap-1">
           <button type="button" className="p-2 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="People">
-            <Users size={T.iconSizes.channelHeader} />
+            <IconUsers width={T.iconSizes.channelHeader} height={T.iconSizes.channelHeader} stroke="currentColor" />
           </button>
-          <span className="text-[13px]" style={{ color: T.colors.textSecondary }}>8</span>
+          <span style={{ fontSize: T.typography.small, color: T.colors.textSecondary }}>8</span>
           <button type="button" className="p-2 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Call">
-            <Headphones size={T.iconSizes.channelHeader} />
+            <IconHeadphones width={T.iconSizes.channelHeader} height={T.iconSizes.channelHeader} stroke="currentColor" />
           </button>
           <button type="button" className="p-2 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Pin">
-            <Pin size={T.iconSizes.channelHeader} />
+            <IconPin width={T.iconSizes.channelHeader} height={T.iconSizes.channelHeader} stroke="currentColor" />
           </button>
           <button type="button" className="p-2 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Search">
-            <Search size={T.iconSizes.channelHeader} />
+            <IconSearch width={T.iconSizes.channelHeader} height={T.iconSizes.channelHeader} stroke="currentColor" />
           </button>
           <button type="button" className="p-2 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="More">
-            <MoreHorizontal size={T.iconSizes.channelHeader} />
+            <IconMore width={T.iconSizes.channelHeader} height={T.iconSizes.channelHeader} stroke="currentColor" />
           </button>
           <button type="button" className="p-2 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Close">
-            <X size={T.iconSizes.channelHeader} />
+            <IconX width={T.iconSizes.channelHeader} height={T.iconSizes.channelHeader} stroke="currentColor" />
           </button>
         </div>
       </div>
@@ -77,7 +77,7 @@ export function DemoChannelHeader({ channelId }: DemoChannelHeaderProps) {
           </button>
         ))}
         <button type="button" className="p-1 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="More tabs">
-          <ChevronDown size={14} />
+          <IconChevronDown width={14} height={14} stroke="currentColor" />
         </button>
       </div>
     </header>
