@@ -197,7 +197,7 @@ export function SlackbotMessagesTab() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
             <div className="w-[120px] h-[120px] mb-6 flex items-center justify-center">
-              <Image src="/slackbot/slackbot-logo.png" alt="Slackbot" width={120} height={120} />
+              <Image src="/slackbot/slackbot-logo.svg" alt="Slackbot" width={120} height={120} />
             </div>
             <h2 className="text-[18px] font-bold text-[#1d1c1d] mb-2">
               Good morning, {DEMO_USER_NAME}!
