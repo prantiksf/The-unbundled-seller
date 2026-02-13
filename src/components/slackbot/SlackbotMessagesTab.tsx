@@ -9,27 +9,12 @@ import {
   IconLightbulb,
   IconPlus,
 } from "@/components/icons";
-import {
-  Type,
-  Smile,
-  AtSign,
-  Paperclip,
-  Send,
-  ChevronDown,
-  Bold,
-  Italic,
-  Underline,
-  Strikethrough,
-  Link,
-  List,
-  ListOrdered,
-  Code,
-} from "lucide-react";
 import { BlockKitRenderer } from "@/components/block-kit/BlockKitRenderer";
 import type { SlackBlock } from "@/components/block-kit/BlockKitRenderer";
 import { cn } from "@/lib/utils";
 import { DEMO_USER_NAME } from "@/context/DemoDataContext";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
+import { MessageInput } from "@/components/shared/MessageInput";
 
 const T = SLACK_TOKENS;
 
@@ -193,33 +178,33 @@ export function SlackbotMessagesTab() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto space-y-4 p-4 min-h-0">
+      <div className="flex-1 overflow-y-auto space-y-4 p-3 min-h-0">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <div className="w-[120px] h-[120px] mb-6 flex items-center justify-center">
-              <Image src="/slackbot-logo.svg" alt="Slackbot" width={120} height={120} />
+          <div className="flex flex-col items-center justify-center py-6 px-2 text-center w-full">
+            <div className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] mb-4 flex items-center justify-center shrink-0">
+              <Image src="/slackbot-logo.svg" alt="Slackbot" width={120} height={120} className="max-w-full max-h-full" />
             </div>
-            <h2 className="text-[18px] font-bold text-[#1d1c1d] mb-2">
+            <h2 className="text-base sm:text-lg font-bold text-[#1d1c1d] mb-2 w-full">
               Good morning, {DEMO_USER_NAME}!
             </h2>
-            <p className="text-[15px] text-[#616061] mb-6">
+            <p className="text-sm sm:text-[15px] text-[#616061] mb-5 w-full">
               The day loads, one unread message at a time.
             </p>
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-wrap gap-2 justify-center w-full">
               {PILL_ACTIONS.map(({ id, label, icon: Icon, query }) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => sendMessage(query)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-md border text-[14px] font-medium hover:bg-[#f8f8f8] transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-md border text-[13px] sm:text-[14px] font-medium hover:bg-[#f8f8f8] transition-colors whitespace-nowrap flex-1 min-w-[140px] max-w-[160px]"
                   style={{
                     backgroundColor: T.colors.background,
                     borderColor: T.colors.border,
                     color: T.colors.text,
                   }}
                 >
-                  <Icon width={16} height={16} style={{ color: T.colors.textSecondary }} stroke="currentColor" />
-                  {label}
+                  <Icon width={14} height={14} style={{ color: T.colors.textSecondary }} stroke="currentColor" className="shrink-0" />
+                  <span>{label}</span>
                 </button>
               ))}
             </div>
@@ -229,10 +214,10 @@ export function SlackbotMessagesTab() {
           <div
             key={m.id}
             className={cn(
-              "rounded-lg p-3 text-sm",
+              "rounded-lg p-2.5 sm:p-3 text-sm break-words",
               m.role === "user"
-                ? "bg-[#f8f8f8] ml-4"
-                : "bg-white border border-[#e8e8e8] mr-4"
+                ? "bg-[#f8f8f8] ml-2 sm:ml-4"
+                : "bg-white border border-[#e8e8e8] mr-2 sm:mr-4"
             )}
           >
             <div className="font-medium text-xs text-[#616061] mb-1">
@@ -241,66 +226,18 @@ export function SlackbotMessagesTab() {
             {m.blocks ? (
               <BlockKitRenderer blocks={m.blocks} />
             ) : (
-              <p className="text-[15px] text-[#1d1c1d]">{m.content}</p>
+              <p className="text-sm sm:text-[15px] text-[#1d1c1d] break-words">{m.content}</p>
             )}
           </div>
         ))}
         {isTyping && (
-          <div className="rounded-lg p-3 bg-white border border-[#e8e8e8] mr-4 text-sm text-[#616061]">
+          <div className="rounded-lg p-2.5 sm:p-3 bg-white border border-[#e8e8e8] mr-2 sm:mr-4 text-sm text-[#616061]">
             Slackbot is typing...
           </div>
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="border-t shrink-0" style={{ borderColor: T.colors.border }}>
-        <div className="flex flex-wrap gap-1 px-3 py-2 border-b" style={{ borderColor: T.colors.border }}>
-          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Bold">
-            <Bold size={16} />
-          </button>
-          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Italic">
-            <Italic size={16} />
-          </button>
-          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Underline">
-            <Underline size={16} />
-          </button>
-          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Strikethrough">
-            <Strikethrough size={16} />
-          </button>
-          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Link">
-            <Link size={16} />
-          </button>
-          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Bullet list">
-            <List size={16} />
-          </button>
-          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Numbered list">
-            <ListOrdered size={16} />
-          </button>
-          <button type="button" className="p-1.5 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Code block">
-            <Code size={16} />
-          </button>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-3">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Reply..."
-            className="flex-1 min-w-0 bg-transparent focus:outline-none"
-            style={{ fontSize: T.typography.body, color: T.colors.text }}
-          />
-          <div className="flex items-center gap-1 shrink-0">
-            <button type="button" className="p-1 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="Attachment">
-              <Paperclip size={18} />
-            </button>
-            <button type="submit" className="p-1 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.link }} title="Send">
-              <Send size={18} />
-            </button>
-            <button type="button" className="p-1 rounded hover:bg-[#f8f8f8]" style={{ color: T.colors.textSecondary }} title="More">
-              <ChevronDown size={18} />
-            </button>
-          </div>
-        </div>
-      </form>
+      <MessageInput placeholder="Reply..." onSubmit={sendMessage} />
     </div>
   );
 }
