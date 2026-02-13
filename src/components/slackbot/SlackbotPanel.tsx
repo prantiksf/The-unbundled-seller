@@ -22,7 +22,7 @@ export function SlackbotPanel() {
 
   return (
     <div
-      className="hidden lg:flex flex-col h-full w-full lg:w-[360px] lg:min-w-[300px] lg:max-w-[400px] shrink-0"
+      className="flex flex-col h-full w-full sm:w-[320px] md:w-[360px] lg:w-[380px] xl:w-[400px] sm:min-w-[280px] shrink-0"
       style={{
         backgroundColor: T.colors.background,
         borderLeft: `1px solid ${T.colors.border}`,
@@ -31,7 +31,7 @@ export function SlackbotPanel() {
     >
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: T.colors.border }}>
         <div className="flex items-center gap-2">
-          <Image src="/slackbot/slackbot-icon.svg" alt="Slackbot" width={20} height={20} />
+          <Image src="/slackbot/slackbot-logo.svg" alt="Slackbot" width={20} height={20} />
           <span className="font-semibold" style={{ fontSize: T.typography.body, color: T.colors.text }}>Slackbot</span>
         </div>
         <div className="flex items-center gap-0.5">

@@ -1,0 +1,15 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="20" height="20" rx="4.5" fill="#4A154B"/>
+  <g transform="translate(3, 3)">
+    <!-- Yellow pill (top left) -->
+    <rect x="0" y="3" width="2" height="5" rx="1" fill="#ECB22E"/>
+    <!-- Red pill (top right) -->
+    <rect x="5" y="0" width="5" height="2" rx="1" fill="#E01E5A"/>
+    <!-- Green pill (bottom right) -->
+    <rect x="9" y="5" width="5" height="2" rx="1" fill="#2EB886"/>
+    <!-- Blue pill (bottom left) -->
+    <rect x="3" y="9" width="2" height="5" rx="1" fill="#36C5F0"/>
+    <!-- Center square -->
+    <rect x="5" y="5" width="4" height="4" rx="0.5" fill="#FFFFFF" opacity="0.3"/>
+  </g>
+</svg>
