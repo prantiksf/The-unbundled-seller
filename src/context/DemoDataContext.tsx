@@ -240,20 +240,35 @@ export function DemoDataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetch("/demo-data.json")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Failed to load demo-data.json: ${r.status}`);
+        return r.json();
+      })
       .then(setDemoData)
-      .catch(console.error);
+      .catch((err) => {
+        console.error("Failed to load demo-data.json:", err);
+        // Set empty object to prevent infinite loading state
+        setDemoData({});
+      });
   }, []);
 
   useEffect(() => {
     fetch("/block-kit-messages.json")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Failed to load block-kit-messages.json: ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
         setBlockKitMessages(data);
         const channelMessages = (data?.channel_messages as Record<string, DemoMessage[]>) || {};
         setMessages(channelMessages);
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error("Failed to load block-kit-messages.json:", err);
+        // Set empty object to prevent infinite loading state
+        setMessages({});
+        setBlockKitMessages({});
+      });
   }, []);
 
   const getChannelPreview = (channelId: string) => {

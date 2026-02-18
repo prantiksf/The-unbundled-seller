@@ -15,6 +15,14 @@ interface DemoMessageListProps {
 export function DemoMessageList({ messages }: DemoMessageListProps) {
   const reversed = [...messages].reverse();
 
+  if (messages.length === 0) {
+    return (
+      <div className="flex-1 overflow-y-auto p-4 flex items-center justify-center">
+        <p className="text-[15px] text-[#616061]">No messages yet</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 overflow-y-auto p-4 flex flex-col-reverse">
       <div className="space-y-3 flex flex-col">

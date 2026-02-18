@@ -14,7 +14,7 @@ export function SlackbotProactiveTab() {
   const { demoData } = useDemoData();
   const data = demoData as Record<string, unknown> | null;
 
-  if (!data) {
+  if (!data || Object.keys(data).length === 0) {
     return (
       <div className="flex items-center justify-center p-8 text-sm text-[#616061]">
         Loading...
