@@ -131,6 +131,16 @@ export function MessagesTab() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onFocus={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new Event("hide-dock"));
+              }
+            }}
+            onBlur={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new Event("show-dock"));
+              }
+            }}
             placeholder="Reply..."
             className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />

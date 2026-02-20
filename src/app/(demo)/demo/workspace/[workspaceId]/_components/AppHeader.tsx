@@ -32,8 +32,8 @@ export function AppHeader() {
         </button>
       </div>
 
-      {/* Center: Search bar */}
-      <div className="flex-1 flex items-center justify-center min-w-0 max-w-xl mx-4">
+      {/* Center: Search bar - aligned with chat surface (72px icon bar + 340px sidebar = 412px) */}
+      <div className="flex-1 flex items-center justify-center min-w-0 max-w-xl mx-4" style={{ marginLeft: '412px' }}>
         <div className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-white/10">
           <IconSearch width={18} height={18} className="text-white/70 shrink-0" stroke="currentColor" />
           <input

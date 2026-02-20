@@ -35,6 +35,7 @@ import {
 import { useDemoData, getAvatarUrl } from "@/context/DemoDataContext";
 import { ActivityListItem } from "./ActivityListItem";
 import { useNav, usePresentationMode } from "../_context/demo-layout-context";
+import { useActiveChat } from "@/components/presentation/DesktopSlackShell";
 import { cn } from "@/lib/utils";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
 
@@ -75,6 +76,18 @@ export function DemoSidebar() {
   const { activeNav } = useNav();
   const { isPresentationMode } = usePresentationMode();
   const { workspace, channels, dms, files, savedItems, getChannelPreview, isChannelRead } = useDemoData();
+  
+  // Try to get activeChatId from context (for local state navigation)
+  let activeChatId: string | undefined;
+  let setActiveChatId: ((id: string) => void) | undefined;
+  try {
+    const chatContext = useActiveChat();
+    activeChatId = chatContext.activeChatId;
+    setActiveChatId = chatContext.setActiveChatId;
+  } catch {
+    // Context not available, fall back to URL params
+    activeChatId = channelId;
+  }
   const [filter, setFilter] = useState<ViewFilter>("all");
   const [search, setSearch] = useState("");
   const [unreadsOnly, setUnreadsOnly] = useState(false);
@@ -295,52 +308,112 @@ export function DemoSidebar() {
       )}
 
       <div className="flex-1 overflow-y-auto min-h-0 p-3 flex flex-col gap-2">
-        {activeNav === "files" && filteredFiles.map((file) => (
-          <Link
-            key={file.id}
-            href={`/demo/workspace/${workspace.id}/channel/${file.channelId}`}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg group w-full transition-colors",
-              channelId === file.channelId ? "" : "hover:bg-[#f0e6f0]"
-            )}
-            style={{
-              ...(channelId === file.channelId ? { backgroundColor: "#ebe0eb", boxShadow: "inset 0 0 0 1px rgba(97,31,105,0.25)" } : {}),
-              borderBottom: "1px solid rgba(97,31,105,0.12)",
-            }}
-          >
-            <IconFolder width={16} height={16} className="shrink-0" style={{ color: T.colors.textSecondary }} stroke="currentColor" />
-            <div className="flex-1 min-w-0">
-              <span className="truncate block" style={{ fontSize: T.typography.body, color: T.colors.text }}>{file.name}</span>
-            </div>
-            <span className="shrink-0" style={{ fontSize: T.typography.smaller, color: T.colors.textSecondary }}>{file.timestamp}</span>
-          </Link>
-        ))}
-        {activeNav === "later" && filteredSaved.map((saved) => (
-          <Link
-            key={saved.id}
-            href={`/demo/workspace/${workspace.id}/channel/${saved.channelId}`}
-            className={cn(
-              "flex items-start gap-3 px-3 py-2.5 rounded-lg group w-full transition-colors",
-              channelId === saved.channelId ? "" : "hover:bg-[#f0e6f0]"
-            )}
-            style={{
-              ...(channelId === saved.channelId ? { backgroundColor: "#ebe0eb", boxShadow: "inset 0 0 0 1px rgba(97,31,105,0.25)" } : {}),
-              borderBottom: "1px solid rgba(97,31,105,0.12)",
-            }}
-          >
-            <IconBookmark width={16} height={16} className="shrink-0 mt-0.5" style={{ color: T.colors.textSecondary }} stroke="currentColor" />
-            <div className="flex-1 min-w-0">
-              <p className="min-w-0 line-clamp-2 break-words" style={{ fontSize: T.typography.small, color: T.colors.text }}>{saved.preview}</p>
-            </div>
-            <span className="shrink-0" style={{ fontSize: T.typography.smaller, color: T.colors.textSecondary }}>{saved.timestamp}</span>
-          </Link>
-        ))}
+        {activeNav === "files" && filteredFiles.map((file) => {
+          const isActive = activeChatId === file.channelId || channelId === file.channelId;
+          const className = cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-lg group w-full transition-colors cursor-pointer",
+            isActive ? "" : "hover:bg-[#f0e6f0]"
+          );
+          const style = {
+            ...(isActive ? { backgroundColor: "#ebe0eb", boxShadow: "inset 0 0 0 1px rgba(97,31,105,0.25)" } : {}),
+            borderBottom: "1px solid rgba(97,31,105,0.12)",
+          };
+          
+          if (isPresentationMode && setActiveChatId) {
+            return (
+              <div
+                key={file.id}
+                className={className}
+                style={style}
+                onClick={() => {
+                  setActiveChatId(file.channelId);
+                  const workspaceId = workspace.id;
+                  const newPath = `/demo/workspace/${workspaceId}/channel/${file.channelId}`;
+                  if (typeof window !== "undefined") {
+                    window.history.replaceState({ ...window.history.state, as: newPath, url: newPath }, "", newPath);
+                  }
+                }}
+              >
+                <IconFolder width={16} height={16} className="shrink-0" style={{ color: T.colors.textSecondary }} stroke="currentColor" />
+                <div className="flex-1 min-w-0">
+                  <span className="truncate block" style={{ fontSize: T.typography.body, color: T.colors.text }}>{file.name}</span>
+                </div>
+                <span className="shrink-0" style={{ fontSize: T.typography.smaller, color: T.colors.textSecondary }}>{file.timestamp}</span>
+              </div>
+            );
+          }
+          
+          return (
+            <Link
+              key={file.id}
+              href={`/demo/workspace/${workspace.id}/channel/${file.channelId}`}
+              className={className}
+              style={style}
+            >
+              <IconFolder width={16} height={16} className="shrink-0" style={{ color: T.colors.textSecondary }} stroke="currentColor" />
+              <div className="flex-1 min-w-0">
+                <span className="truncate block" style={{ fontSize: T.typography.body, color: T.colors.text }}>{file.name}</span>
+              </div>
+              <span className="shrink-0" style={{ fontSize: T.typography.smaller, color: T.colors.textSecondary }}>{file.timestamp}</span>
+            </Link>
+          );
+        })}
+        {activeNav === "later" && filteredSaved.map((saved) => {
+          const isActive = activeChatId === saved.channelId || channelId === saved.channelId;
+          const className = cn(
+            "flex items-start gap-3 px-3 py-2.5 rounded-lg group w-full transition-colors cursor-pointer",
+            isActive ? "" : "hover:bg-[#f0e6f0]"
+          );
+          const style = {
+            ...(isActive ? { backgroundColor: "#ebe0eb", boxShadow: "inset 0 0 0 1px rgba(97,31,105,0.25)" } : {}),
+            borderBottom: "1px solid rgba(97,31,105,0.12)",
+          };
+          
+          if (isPresentationMode && setActiveChatId) {
+            return (
+              <div
+                key={saved.id}
+                className={className}
+                style={style}
+                onClick={() => {
+                  setActiveChatId(saved.channelId);
+                  const workspaceId = workspace.id;
+                  const newPath = `/demo/workspace/${workspaceId}/channel/${saved.channelId}`;
+                  if (typeof window !== "undefined") {
+                    window.history.replaceState({ ...window.history.state, as: newPath, url: newPath }, "", newPath);
+                  }
+                }}
+              >
+                <IconBookmark width={16} height={16} className="shrink-0 mt-0.5" style={{ color: T.colors.textSecondary }} stroke="currentColor" />
+                <div className="flex-1 min-w-0">
+                  <p className="min-w-0 line-clamp-2 break-words" style={{ fontSize: T.typography.small, color: T.colors.text }}>{saved.preview}</p>
+                </div>
+                <span className="shrink-0" style={{ fontSize: T.typography.smaller, color: T.colors.textSecondary }}>{saved.timestamp}</span>
+              </div>
+            );
+          }
+          
+          return (
+            <Link
+              key={saved.id}
+              href={`/demo/workspace/${workspace.id}/channel/${saved.channelId}`}
+              className={className}
+              style={style}
+            >
+              <IconBookmark width={16} height={16} className="shrink-0 mt-0.5" style={{ color: T.colors.textSecondary }} stroke="currentColor" />
+              <div className="flex-1 min-w-0">
+                <p className="min-w-0 line-clamp-2 break-words" style={{ fontSize: T.typography.small, color: T.colors.text }}>{saved.preview}</p>
+              </div>
+              <span className="shrink-0" style={{ fontSize: T.typography.smaller, color: T.colors.textSecondary }}>{saved.timestamp}</span>
+            </Link>
+          );
+        })}
         {activeNav === "dms" && dmsOnly.map((item) => {
-          const isActive = channelId === item.id;
+          const isActive = activeChatId === item.id || channelId === item.id;
           const { preview, timestamp } = getChannelPreview(item.id);
           const avatarSrc = item.avatarUrl || getAvatarUrl(item.name, 64);
           const className = cn(
-            "flex items-start gap-3 px-3 py-2.5 rounded-lg group w-full transition-colors",
+            "flex items-start gap-3 px-3 py-2.5 rounded-lg group w-full transition-colors cursor-pointer",
             isActive ? "" : "hover:bg-[#52215A]"
           );
           const style = {
@@ -348,23 +421,20 @@ export function DemoSidebar() {
             borderBottom: "1px solid rgba(255,255,255,0.06)",
           };
           
-          if (isPresentationMode) {
-            // In presentation mode, only Slackbot can be selected, others are disabled
-            const isClickable = item.id === "slackbot";
+          if (isPresentationMode && setActiveChatId) {
+            // In presentation mode, use local state navigation
             return (
               <div
                 key={item.id}
                 className={className}
-                style={{
-                  ...style,
-                  cursor: isClickable ? "default" : "not-allowed",
-                  opacity: isActive ? 1 : (isClickable ? 1 : 0.6),
-                }}
-                onClick={(e) => {
-                  // Prevent any action for non-Slackbot items
-                  if (!isClickable) {
-                    e.preventDefault();
-                    e.stopPropagation();
+                style={style}
+                onClick={() => {
+                  setActiveChatId(item.id);
+                  // Update URL without navigation
+                  const workspaceId = workspace.id;
+                  const newPath = `/demo/workspace/${workspaceId}/channel/${item.id}`;
+                  if (typeof window !== "undefined") {
+                    window.history.replaceState({ ...window.history.state, as: newPath, url: newPath }, "", newPath);
                   }
                 }}
               >
@@ -545,21 +615,123 @@ export function DemoSidebar() {
           );
         })}
         {activeNav === "agentforce" && agentforceItems.map((item) => {
-          const isActive = channelId === item.id;
+          const isActive = activeChatId === item.id || channelId === item.id;
           const { preview, timestamp } = getChannelPreview(item.id);
           const avatarSrc = item.avatarUrl || getAvatarUrl(item.name, 64);
+          const className = cn(
+            "flex items-start gap-3 px-3 py-2.5 rounded-lg group w-full transition-colors cursor-pointer",
+            isActive ? "" : "hover:bg-[#52215A]"
+          );
+          const style = {
+            ...(isActive ? { backgroundColor: T.colors.dmSidebarSelect } : openDropdownId === item.id ? { backgroundColor: "#52215A" } : {}),
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+          };
+          
+          if (isPresentationMode && setActiveChatId) {
+            return (
+              <div
+                key={item.id}
+                className={className}
+                style={style}
+                onClick={() => {
+                  setActiveChatId(item.id);
+                  const workspaceId = workspace.id;
+                  const newPath = `/demo/workspace/${workspaceId}/channel/${item.id}`;
+                  if (typeof window !== "undefined") {
+                    window.history.replaceState({ ...window.history.state, as: newPath, url: newPath }, "", newPath);
+                  }
+                }}
+              >
+                <div className="relative shrink-0 mt-0.5">
+                  <img src={avatarSrc} alt="" className="w-8 h-8 rounded-md object-cover" />
+                  <StatusDot status={item.status} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="truncate font-medium text-white" style={{ fontSize: T.typography.body }}>{item.name}</span>
+                  </div>
+                  {preview && (
+                    <p className="mt-0.5 min-w-0 line-clamp-2 break-words" style={{ color: T.colors.dmMutedText }}>{preview}</p>
+                  )}
+                </div>
+                <div className="shrink-0 mt-0.5 w-[72px] flex justify-end items-center" onClick={(e) => e.stopPropagation()}>
+                  <div className={cn("items-center gap-1 px-2 py-1 rounded-lg bg-white shadow-sm", (openDropdownId === item.id ? "flex" : "hidden group-hover:flex"))}>
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} className="p-0.5 rounded hover:bg-gray-100" title="Save for later">
+                      <IconBookmark width={14} height={14} style={{ color: "#1d1c1d" }} stroke="currentColor" />
+                    </button>
+                    <DropdownMenu modal={false} open={openDropdownId === item.id} onOpenChange={(open) => setOpenDropdownId(open ? item.id : null)}>
+                      <DropdownMenuTrigger asChild>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} className="p-0.5 rounded hover:bg-gray-100" title="More options">
+                          <IconMoreVertical width={14} height={14} style={{ color: "#1d1c1d" }} stroke="currentColor" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" side="right" className="w-56 bg-white rounded-lg shadow-lg border border-gray-200" sideOffset={4}>
+                        <DropdownMenuItem className="cursor-pointer gap-2 text-sm text-[#1d1c1d]">
+                          <IconSquare width={14} height={14} stroke="currentColor" />
+                          Mark as unread
+                          <DropdownMenuShortcut>U</DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer gap-2 text-sm text-[#1d1c1d]">
+                          <IconBookmark width={14} height={14} stroke="currentColor" />
+                          Save for later
+                          <DropdownMenuShortcut>A</DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger className="cursor-pointer text-sm text-[#1d1c1d]">
+                            Remind me about this
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent className="w-44 bg-white rounded-lg shadow-lg border border-gray-200">
+                            <DropdownMenuItem className="cursor-pointer text-sm">In 20 minutes</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer text-sm">In 1 hour</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer text-sm">In 3 hours</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer text-sm">Tomorrow</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer text-sm">Next week</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer text-sm">Custom...</DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger className="cursor-pointer text-sm text-[#1d1c1d]">
+                            Copy
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent className="w-44 bg-white rounded-lg shadow-lg border border-gray-200">
+                            <DropdownMenuItem className="cursor-pointer text-sm">Copy name</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer text-sm">Copy link</DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer text-sm">Copy huddle link</DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="cursor-pointer gap-2 text-sm text-[#1d1c1d]">
+                          <IconHome width={14} height={14} stroke="currentColor" />
+                          Open in home
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer gap-2 text-sm text-[#1d1c1d]">
+                          <IconLayoutGrid width={14} height={14} stroke="currentColor" />
+                          Open in split view
+                          <DropdownMenuShortcut>⌘ Opt Click</DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer gap-2 text-sm text-[#1d1c1d]">
+                          <IconLink width={14} height={14} stroke="currentColor" />
+                          Open in new window
+                          <DropdownMenuShortcut>⌘ Click</DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  {timestamp && (
+                    <span className={cn("text-right", openDropdownId === item.id ? "hidden" : "group-hover:hidden")} style={{ fontSize: T.typography.smaller, color: T.colors.dmMutedText }}>{timestamp}</span>
+                  )}
+                </div>
+              </div>
+            );
+          }
+          
           return (
             <Link
               key={item.id}
               href={`/demo/workspace/${workspace.id}/channel/${item.id}`}
-              className={cn(
-                "flex items-start gap-3 px-3 py-2.5 rounded-lg group w-full transition-colors",
-                isActive ? "" : "hover:bg-[#52215A]"
-              )}
-              style={{
-                ...(isActive ? { backgroundColor: T.colors.dmSidebarSelect } : openDropdownId === item.id ? { backgroundColor: "#52215A" } : {}),
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
-              }}
+              className={className}
+              style={style}
             >
               <div className="relative shrink-0 mt-0.5">
                 <img src={avatarSrc} alt="" className="w-8 h-8 rounded-md object-cover" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useRef } from "react";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
 
 const T = SLACK_TOKENS;
@@ -8,24 +8,62 @@ const T = SLACK_TOKENS;
 interface MessageInputProps {
   placeholder?: string;
   onSubmit?: (message: string) => void;
+  value?: string;
+  onChange?: (value: string) => void;
 }
 
-export function MessageInput({ placeholder = "Message #general", onSubmit }: MessageInputProps) {
-  const [input, setInput] = useState("");
+export function MessageInput({ 
+  placeholder = "Message #general", 
+  onSubmit,
+  value: controlledValue,
+  onChange: controlledOnChange
+}: MessageInputProps) {
+  const [internalInput, setInternalInput] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Use controlled value if provided, otherwise use internal state
+  const input = controlledValue !== undefined ? controlledValue : internalInput;
+  const setInput = controlledOnChange || setInternalInput;
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
       onSubmit?.(input);
-      setInput("");
+      if (controlledValue === undefined) {
+        // Only clear if using internal state
+        setInput("");
+      }
+    }
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    e.stopPropagation();
+    // Dispatch hide-dock event
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("hide-dock"));
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    e.stopPropagation();
+    // Dispatch show-dock event
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("show-dock"));
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="shrink-0 px-2 pb-2">
+    <form onSubmit={handleSubmit} className="shrink-0 px-2 pb-2 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
       <div
-        className="bg-white border border-solid rounded-lg shadow-[0px_1px_3px_0px_rgba(0,0,0,0.08)] overflow-hidden w-full"
-        style={{ borderColor: "rgba(94,93,96,0.45)" }}
+        className="bg-white border border-solid rounded-lg shadow-[0px_1px_3px_0px_rgba(0,0,0,0.08)] overflow-hidden w-full pointer-events-auto"
+        style={{ borderColor: "rgba(94,93,96,0.45)", pointerEvents: "auto" }}
+        onClick={(e) => {
+          e.stopPropagation();
+          // Focus the textarea when clicking anywhere in the input box
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+          }
+        }}
       >
         {/* Top Formatting Toolbar - Hidden on narrow screens */}
         <div className="hidden sm:flex items-center gap-0.5 px-3 py-2 border-b" style={{ borderColor: "rgba(94,93,96,0.13)" }}>
@@ -80,17 +118,60 @@ export function MessageInput({ placeholder = "Message #general", onSubmit }: Mes
         </div>
 
         {/* Input Field */}
-        <div className="px-3 py-2">
-          <input
-            type="text"
+        <div className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+          <textarea
+            ref={textareaRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setInput(newValue);
+            }}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onClick={(e) => {
+              e.stopPropagation();
+              // Ensure focus triggers onFocus event
+              if (document.activeElement !== e.currentTarget) {
+                e.currentTarget.focus();
+              }
+            }}
             placeholder={placeholder}
-            className="w-full bg-transparent border-none outline-none text-[15px]"
+            rows={1}
+            tabIndex={0}
+            autoFocus={false}
+            className="w-full bg-transparent border-none outline-none text-[15px] resize-none overflow-hidden pointer-events-auto focus:outline-none"
             style={{
               fontFamily: T.typography.fontFamily,
               lineHeight: "22px",
               color: T.colors.text,
+              minHeight: "22px",
+              maxHeight: "200px",
+              pointerEvents: "auto",
+              cursor: "text",
+              WebkitUserSelect: "text",
+              userSelect: "text",
+            }}
+            onInput={(e) => {
+              // Auto-resize textarea
+              const target = e.target as HTMLTextAreaElement;
+              target.style.height = "auto";
+              target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
+            }}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              // Submit on Enter (but allow Shift+Enter for new line)
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (input.trim()) {
+                  onSubmit?.(input);
+                  if (controlledValue === undefined) {
+                    setInput("");
+                  }
+                  // Reset textarea height
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = "auto";
+                }
+              }
             }}
           />
         </div>

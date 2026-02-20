@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Avant Garde for Salesforce Font - ITC Avant Garde Gothic */
+@import url('https://fonts.cdnfonts.com/css/itc-avant-garde-gothic');
+
+/* Fallback: Using a similar geometric sans-serif */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
 html,
 body,
 :root {
@@ -35,6 +41,37 @@ body,
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+
+    /* Presentation theme variables */
+    --bg: #060608;
+    --bg-1: #0B0B0F;
+    --bg-2: #111117;
+    --bg-3: #181820;
+    --border-pres: rgba(255,255,255,0.06);
+    --border-2: rgba(255,255,255,0.11);
+    --text: #ECEBF5;
+    --text-2: rgba(236,235,245,0.5);
+    --text-3: rgba(236,235,245,0.25);
+    --ink: #ECEBF5;
+    --intel: #00CBA9;
+    --intel-dim: rgba(0,203,169,0.09);
+    --intel-glow: rgba(0,203,169,0.22);
+    --intel-hi: #00F5CC;
+    --friction: #F04E4E;
+    --fric-dim: rgba(240,78,78,0.07);
+    --gold: #F5A623;
+    --gold-dim: rgba(245,166,35,0.08);
+    --sf-blue: #0176D3;
+    --sf-blue-d: #014486;
+    --sf-blue-li: #1B96FF;
+    --sf-blue-bg: rgba(1,118,211,0.08);
+    --sf-blue-b: rgba(1,118,211,0.2);
+    --ub-noise: #D73D3D;
+    --ub-noise-b: rgba(215,61,61,0.18);
+    --ub-noise-bg: rgba(215,61,61,0.07);
+    --ub-green: #2E844A;
+    --ub-green-b: rgba(46,132,74,0.2);
+    --ub-green-bg: rgba(46,132,74,0.08);
   }
   .dark {
     --background: 240 10% 3.9%;
@@ -123,4 +160,150 @@ body,
 .messages-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #dcdcdc #f8f8f8;
+}
+
+/* Presentation animations */
+@keyframes up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--intel-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ubStrike {
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes ubCrystal {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+    filter: blur(5px);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.03) translateY(-2px);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes essBreath {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(46,132,74,0.1);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(46,132,74,0.2);
+  }
+}
+
+@keyframes ubFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes sphereRotate {
+  from {
+    transform: rotateX(-20deg) rotateY(0deg);
+  }
+  to {
+    transform: rotateX(-20deg) rotateY(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes imageFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+
+@keyframes revealDrift {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes subtleFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-reveal {
+  animation: revealDrift 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.animate-subtle {
+  animation: subtleFade 0.6s ease-out forwards;
+}
+
+/* Noise overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 256px;
 }

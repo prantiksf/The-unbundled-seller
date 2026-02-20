@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { ScenarioNarrative } from "../ScenarioNarrative";
 import { AppleWatchShell } from "../AppleWatchShell";
 
 interface Scene2Props {
@@ -12,13 +11,11 @@ interface Scene2Props {
 }
 
 export function Scene2({ onNext }: Scene2Props) {
-  const [showPrototype, setShowPrototype] = useState(false);
   const [step, setStep] = useState<'face' | 'short' | 'long' | 'details'>('face');
   const [showNotification, setShowNotification] = useState(false);
 
   // Keyboard navigation for watch states
   useEffect(() => {
-    if (!showPrototype) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only handle arrow keys when not typing in an input/textarea
@@ -57,26 +54,7 @@ export function Scene2({ onNext }: Scene2Props) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [showPrototype, showNotification, step]);
-
-  if (!showPrototype) {
-    return (
-      <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <ScenarioNarrative
-            title="Scene 2: Watch Notification"
-            bundledText="Rita misses critical updates because she's away from her desk. Important deal signals arrive via email or CRM notifications that she doesn't see until hours later."
-            unbundledText="Rita's Apple Watch delivers intelligent, prioritized notifications. AI filters noise and surfaces only the signals that require immediate attention, keeping her connected without distraction."
-            onEnterPrototype={() => setShowPrototype(true)}
-          />
-        </motion.div>
-      </AnimatePresence>
-    );
-  }
+  }, [showNotification, step]);
 
   return (
     <AnimatePresence mode="wait">

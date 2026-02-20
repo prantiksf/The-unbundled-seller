@@ -4,6 +4,7 @@ import Link from "next/link";
 import { IconHashtag, IconHeadphones } from "@/components/icons";
 import { useDemoData, getAvatarUrl } from "@/context/DemoDataContext";
 import { usePresentationMode } from "../_context/demo-layout-context";
+import { useActiveChat } from "@/components/presentation/DesktopSlackShell";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
 
 const T = SLACK_TOKENS;
@@ -70,10 +71,28 @@ export function ActivityListItem({
       };
 
   if (isPresentationMode) {
+    // Try to get setActiveChatId from context
+    let setActiveChatId: ((id: string) => void) | undefined;
+    try {
+      const chatContext = useActiveChat();
+      setActiveChatId = chatContext.setActiveChatId;
+    } catch {
+      // Context not available (component used outside DesktopSlackShell)
+    }
+    
     return (
       <div
-        className={className}
+        className={`${className} cursor-pointer`}
         style={style}
+        onClick={() => {
+          if (setActiveChatId) {
+            setActiveChatId(item.id);
+            const newPath = `/demo/workspace/${workspaceId}/channel/${item.id}`;
+            if (typeof window !== "undefined") {
+              window.history.replaceState({ ...window.history.state, as: newPath, url: newPath }, "", newPath);
+            }
+          }
+        }}
       >
       <div className="relative shrink-0 mt-0.5">
         {avatarSrc ? (

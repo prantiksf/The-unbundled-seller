@@ -46,6 +46,9 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        <link href="https://fonts.cdnfonts.com/css/itc-avant-garde-gothic" rel="stylesheet" />
+      </head>
       <body className={lato.className}>
         {hasConvex ? (
           <ConvexAuthNextjsServerProvider>{content}</ConvexAuthNextjsServerProvider>

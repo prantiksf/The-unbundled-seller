@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ScenarioNarrative } from "../ScenarioNarrative";
 import { DesktopSlackShell } from "../DesktopSlackShell";
-import { DemoChannelHeader } from "@/app/(demo)/demo/workspace/[workspaceId]/channel/[channelId]/_components/DemoChannelHeader";
 import { DemoMessageList } from "@/app/(demo)/demo/workspace/[workspaceId]/channel/[channelId]/_components/DemoMessageList";
 import { DemoMessageInput } from "@/app/(demo)/demo/workspace/[workspaceId]/channel/[channelId]/_components/DemoMessageInput";
 import { useDemoMessages, useDemoData } from "@/context/DemoDataContext";
@@ -58,9 +57,9 @@ export function Scene1({ onNext }: Scene1Props) {
         transition={{ duration: 0.3 }}
         className="h-full w-full"
       >
-        <DesktopSlackShell defaultNav="dms" defaultChannelId="slackbot">
+        <DesktopSlackShell defaultNav="dms" defaultChannelId="slackbot" hideHeader={true}>
           <div className="flex flex-col h-full bg-white">
-            <DemoChannelHeader channelId={channelId} />
+            {/* Header removed - on-hover header comes on top */}
             <DemoMessageList messages={messages} />
             <DemoMessageInput channelId={channelId} placeholder="Reply..." />
           </div>

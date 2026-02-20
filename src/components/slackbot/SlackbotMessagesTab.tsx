@@ -301,7 +301,12 @@ export function SlackbotMessagesTab() {
         )}
       </div>
 
-      <MessageInput placeholder="Reply..." onSubmit={sendMessage} />
+      <MessageInput 
+        placeholder="Reply..." 
+        onSubmit={sendMessage}
+        value={input}
+        onChange={setInput}
+      />
     </div>
   );
 }
