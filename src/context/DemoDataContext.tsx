@@ -140,57 +140,112 @@ const DEMO_SAVED: DemoSavedItem[] = [
 const DEMO_ACTIVITY_POSTS: DemoActivityPost[] = [
   {
     id: "ap1",
-    author: "Srinivas Tallapragada",
-    authorImage: "https://randomuser.me/api/portraits/med/men/33.jpg",
+    author: "Slackbot",
+    authorImage: "/slackbot-logo.svg",
     channelId: "general",
-    channelName: "all-salesforce",
-    content: "Great blog post from @Irina Malkova on we rolled out informatica help agent in 24 days. ...",
-    timestamp: "8:31 PM",
-    read: true,
+    channelName: "general",
+    content: "Champion departed: Acme Corp — Marcus Lee left last week. $200K deal at risk. New champions identified: Priya Shah (champion) and Daniel Kim (VP Procurement).",
+    timestamp: "10:36 AM",
+    read: false,
     type: "post",
   },
   {
     id: "ap2",
-    author: "Jack Lakkapragada",
-    authorImage: "https://randomuser.me/api/portraits/med/men/45.jpg",
+    author: "Rita Patel",
+    authorImage: "https://randomuser.me/api/portraits/med/women/75.jpg",
     channelId: "general",
-    channelName: "ai-club",
-    content: "New Course: Duke ML Foundations for Product Managers ...",
-    timestamp: "10:20 AM",
+    channelName: "general",
+    content: "What about the Acme situation? Marcus left. Need to reconnect with the new team.",
+    timestamp: "10:35 AM",
     read: false,
     type: "post",
   },
   {
     id: "ap3",
-    author: "Sarah Chen",
-    authorImage: "https://randomuser.me/api/portraits/med/women/44.jpg",
-    channelId: "sales",
-    channelName: "sales",
-    content: "SmartFit replied to the follow-up email. Next steps: schedule demo.",
-    timestamp: "Yesterday",
+    author: "Slackbot",
+    authorImage: "/slackbot-logo.svg",
+    channelId: "general",
+    channelName: "general",
+    content: "TechStart QBR prep: Your morning state: $410K on track / $90K needs you / $0 blocked. 2 deals need attention: Runners Club (budget objection) and Sporty Nation (champion silent).",
+    timestamp: "10:33 AM",
     read: false,
     type: "post",
   },
   {
     id: "ap4",
-    author: "Jordan Hayes",
-    authorImage: "https://randomuser.me/api/portraits/med/men/22.jpg",
+    author: "Rita Patel",
+    authorImage: "https://randomuser.me/api/portraits/med/women/75.jpg",
     channelId: "q3-pipeline",
     channelName: "q3-pipeline",
-    content: ">> 258.15 Patch QA to Test and Close: 1 open work item...",
-    timestamp: "8:27 PM",
+    content: "Q4 wrap-up: Hey team — checking in on Q3 pipeline. Vibeface has my daily brief ready. Greentech closed at $60K — celebrating that win!",
+    timestamp: "10:32 AM",
     read: false,
-    commentCount: 1,
+    commentCount: 2,
     type: "post",
   },
   {
     id: "ap5",
-    author: "Mike Lenz",
-    authorImage: "https://randomuser.me/api/portraits/med/men/46.jpg",
+    author: "Sarah Chen",
+    authorImage: "https://randomuser.me/api/portraits/med/women/44.jpg",
+    channelId: "sales",
+    channelName: "sales",
+    content: "Q4 performance: SmartFit replied to the follow-up email. Positive tone. Next steps: schedule demo for Q1. Great work on Greentech close!",
+    timestamp: "Yesterday",
+    read: false,
+    type: "post",
+  },
+  {
+    id: "ap6",
+    author: "Jordan Hayes",
+    authorImage: "https://randomuser.me/api/portraits/med/men/22.jpg",
+    channelId: "deal-runners",
+    channelName: "deal-runners",
+    content: "Q4 follow-up: 4 PM call confirmed. Budget discussion is top priority. Send the value justification deck when ready.",
+    timestamp: "Today",
+    read: false,
+    type: "post",
+  },
+  {
+    id: "ap7",
+    author: "Priya Shah",
+    authorImage: "https://randomuser.me/api/portraits/med/women/32.jpg",
+    channelId: "deal-acme",
+    channelName: "deal-acme",
+    content: "Q4 intro: Thanks for the intro via Sarah! Excited to work together. Daniel Kim is reviewing the proposal — should have feedback by end of week.",
+    timestamp: "10:20 AM",
+    read: false,
+    type: "post",
+  },
+  {
+    id: "ap8",
+    author: "Dana Torres",
+    authorImage: "https://randomuser.me/api/portraits/med/women/28.jpg",
+    channelId: "deal-sporty",
+    channelName: "deal-sporty",
+    content: "Q4 update: Reaching out to Mike Torres. Team might be in flux after Q4 reorg. Champion has been silent since mid-December.",
+    timestamp: "Today",
+    read: false,
+    type: "post",
+  },
+  {
+    id: "ap9",
+    author: "Lisa Park",
+    authorImage: "https://randomuser.me/api/portraits/med/women/65.jpg",
+    channelId: "deal-techstart",
+    channelName: "deal-techstart",
+    content: "Q4 prep: Reviewed the QBR brief. Ready for the 2 PM call. Pipeline shows $42K opportunity — needs acceleration.",
+    timestamp: "9:30 AM",
+    read: false,
+    type: "post",
+  },
+  {
+    id: "ap10",
+    author: "Sarah Chen",
+    authorImage: "https://randomuser.me/api/portraits/med/women/44.jpg",
     channelId: "sarah-chen",
     channelName: "sarah-chen",
-    content: "I want you to take maestro. And update it with the latest thinking. RE slack bot. ...",
-    timestamp: "9:45 AM",
+    content: "Q4 wrap-up: Done. Priya should have the intro email. Good luck with Acme — that's a big one for Q1. Great work closing Greentech!",
+    timestamp: "Yesterday",
     read: true,
     type: "dm",
   },
@@ -198,28 +253,79 @@ const DEMO_ACTIVITY_POSTS: DemoActivityPost[] = [
 
 export const DEMO_USER_NAME = "Rita";
 
-// Fictional preview data for channels and DMs - ensures all cards have meaningful content
+// Fictional preview data for channels and DMs - ensures all cards have meaningful content with Q4 engagement context
 const CHANNEL_PREVIEWS: Record<string, { preview: string; timestamp: string }> = {
-  "general": { preview: "Company-wide updates and announcements", timestamp: "Today" },
-  "sales": { preview: "SmartFit replied to the follow-up — positive tone. Vibeface prepping demo deck.", timestamp: "9:45 AM" },
-  "q3-pipeline": { preview: "Plan status: *$430K on track* after Greentech SO...", timestamp: "Yesterday" },
-  "deal-acme": { preview: "Sent intro to Priya via Sarah. Daniel Kim — can we pull the...", timestamp: "Today" },
-  "deal-runners": { preview: "30-min call with Jordan set for 4 PM. Vibeface prepping...", timestamp: "10:15 AM" },
-  "deal-greentech": { preview: "Following up with Priya on SOW. She's been responsive.", timestamp: "Today" },
-  "deal-sporty": { preview: "Reaching out to Mike Torres. Dana's team might be in flux.", timestamp: "Today" },
-  "deal-techstart": { preview: "Reviewed the brief. Ready for the call.", timestamp: "9:30 AM" },
+  "general": { 
+    preview: "Champion departed: Acme Corp — Marcus left last week. New contacts: Priya Shah (champion) and Daniel Kim (VP Procurement). $200K deal at risk.", 
+    timestamp: "10:36 AM" 
+  },
+  "sales": { 
+    preview: "Q4 wrap-up: Greentech closed at $60K. SmartFit replied to follow-up — positive tone. Vibeface prepping demo deck for Q1.", 
+    timestamp: "9:45 AM" 
+  },
+  "q3-pipeline": { 
+    preview: "Plan status: *$430K on track* after Greentech SO closed. Q4 velocity analysis shows 52% win rate (up from 48% Q3).", 
+    timestamp: "Yesterday" 
+  },
+  "deal-acme": { 
+    preview: "Q4 engagement: Sent intro to Priya via Sarah after Marcus departure. Daniel Kim (VP Procurement) — can we pull the contract forward to Q1?", 
+    timestamp: "Today" 
+  },
+  "deal-runners": { 
+    preview: "Q4 follow-up: 30-min call with Jordan set for 4 PM. Budget objection flagged — Vibeface prepping value justification deck.", 
+    timestamp: "10:15 AM" 
+  },
+  "deal-greentech": { 
+    preview: "Q4 closed won: Following up with Priya on renewal SOW. She's been responsive. $60K deal closed in December — celebrating win.", 
+    timestamp: "Today" 
+  },
+  "deal-sporty": { 
+    preview: "Q4 at risk: Reaching out to Mike Torres. Dana's team might be in flux after Q4 reorg. Champion silent since mid-December.", 
+    timestamp: "Today" 
+  },
+  "deal-techstart": { 
+    preview: "Q4 prep: Reviewed the QBR brief. Ready for the call at 2 PM. Pipeline shows $42K opportunity — needs acceleration.", 
+    timestamp: "9:30 AM" 
+  },
 };
 
 const DM_PREVIEWS: Record<string, { preview: string; timestamp: string }> = {
-  "slackbot": { preview: "Proactive insights for today — $410K on track", timestamp: "Today" },
-  "sarah-chen": { preview: "Done. Priya should have it. Good luck...", timestamp: "Yesterday" },
-  "priya-shah": { preview: "Thanks Priya! Let me know if legal has any...", timestamp: "10:20 AM" },
-  "jordan-hayes": { preview: "4 PM works. Send the deck when you have...", timestamp: "Today" },
-  "dana-torres": { preview: "Following up. Let me know if there's a...", timestamp: "3 days ago" },
-  "marcus-lee": { preview: "Thanks Marcus! Appreciate your...", timestamp: "1 week ago" },
-  "lisa-park": { preview: "Sounds good. He's detail-oriented but...", timestamp: "Today" },
-  "daniel-kim": { preview: "Sent intro to Priya via Sarah. Daniel Kim — can we pull the...", timestamp: "Today" },
-  "mike-torres": { preview: "Reaching out to Mike Torres. Dana's team might be in flux.", timestamp: "Today" },
+  "slackbot": { 
+    preview: "Q4 performance summary: $471K attained (94% of $500K quota). Win rate 52% ↑ from Q3. Proactive insights for Q1 — $410K on track.", 
+    timestamp: "Today" 
+  },
+  "sarah-chen": { 
+    preview: "Q4 wrap-up: Done. Priya should have the intro email. Good luck with Acme — that's a big one for Q1.", 
+    timestamp: "Yesterday" 
+  },
+  "priya-shah": { 
+    preview: "Q4 engagement: Thanks Priya! Let me know if legal has any questions on the SOW. Excited to work together in Q1.", 
+    timestamp: "10:20 AM" 
+  },
+  "jordan-hayes": { 
+    preview: "Q4 follow-up: 4 PM works perfectly. Send the deck when you have it. Budget discussion is top priority for our call.", 
+    timestamp: "Today" 
+  },
+  "dana-torres": { 
+    preview: "Q4 check-in: Following up on Runners Club deal. Let me know if there's a good time to discuss the budget objection.", 
+    timestamp: "3 days ago" 
+  },
+  "marcus-lee": { 
+    preview: "Q4 farewell: Thanks Marcus! Appreciate your help on Acme before you left. Best of luck in your new role.", 
+    timestamp: "1 week ago" 
+  },
+  "lisa-park": { 
+    preview: "Q4 prep: Sounds good. He's detail-oriented but responsive. TechStart QBR should go well — we're prepared.", 
+    timestamp: "Today" 
+  },
+  "daniel-kim": { 
+    preview: "Q4 intro: Sent intro to Priya via Sarah. Daniel Kim — can we pull the contract forward? Q1 pipeline needs this.", 
+    timestamp: "Today" 
+  },
+  "mike-torres": { 
+    preview: "Q4 at-risk: Reaching out to Mike Torres. Dana's team might be in flux after the Q4 reorg. Champion has been silent.", 
+    timestamp: "Today" 
+  },
 };
 
 function getLastMessagePreview(messages: DemoMessage[]): string {

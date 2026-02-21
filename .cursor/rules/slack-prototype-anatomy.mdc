@@ -1,0 +1,267 @@
+---
+description: Critical Slack prototype anatomy constraints - header positioning, card data requirements, and message input consistency
+alwaysApply: true
+---
+
+# Slack Prototype Anatomy - Never Break These Rules
+
+These are **non-negotiable structural constraints** for all Slack prototype screens. Violating these rules breaks the fundamental UI anatomy.
+
+## 1. Header Positioning - Never Overlap or Hide
+
+### Global Header
+- **Height**: Exactly `40px` (CSS variable: `--header-height`)
+- **Position**: `fixed`, `top: 0`, `z-index: 10000`
+- **Visibility**: Always visible in prototype mode (never disappears, never fades)
+
+### Slack App Header
+- **Position**: Must render **below** the global header, never behind it
+- **Offset**: Prototype container must have `padding-top: 40px` or `margin-top: 40px`
+- **Z-index**: `z-index: 100` (below global header, above content)
+- **Visibility**: Always rendered, never conditionally hidden based on view state
+
+### Implementation Pattern
+```tsx
+// ✅ CORRECT: Prototype container offsets for global header
+<div 
+  className="prototype-screen"
+  style={{ 
+    paddingTop: 'var(--header-height, 40px)',
+    height: 'calc(100vh - var(--header-height, 40px))'
+  }}
+>
+  <div className="slack-shell">
+    <AppHeader /> {/* Always first child, always visible */}
+    {/* rest of content */}
+  </div>
+</div>
+
+// ❌ WRONG: App header inside conditional render or view-specific component
+{activeNav === 'dms' && <AppHeader />}
+```
+
+### Constraint
+- App header must be a **direct child** of `slack-shell`, never inside `DemoSidebar`, `ActivityView`, `DMsView`, or any view-specific component
+- Switching between DMs/Activity/Files/Later/Agentforce: **only** sidebar list content changes, app header never unmounts
+
+---
+
+## 2. Card Data Requirements - No Empty States Ever
+
+### Rule
+Every card that appears in any sidebar view (DMs, Activity, Files, Later, Agentforce) **must** have complete contextual dummy data. Empty cards are worse than absent cards.
+
+### Required Data Fields
+
+**Channel Card:**
+- Channel name: `#deal-[accountname]` or `#[team]-[topic]`
+- Preview text: Real sentence from fictional participant about fictional deal situation
+- Timestamp: Realistic time (Today, 10:20 AM, Yesterday, etc.)
+- Unread badge: Only if corresponding to actual unread messages
+
+**DM Card:**
+- Contact name: Named fictional person (first + last)
+- Preview text: Last message in thread — complete, meaningful sentence
+- Timestamp: Realistic
+- Avatar: Person's initials or avatar — consistent across all arcs
+
+**Activity Card:**
+- Source: `#channel-name` or person name
+- Action: Specific, readable action (replied, mentioned you, reacted)
+- Preview: Actual message content being referenced
+- Timestamp: Realistic
+
+### Fictional Data Universe (Single Source of Truth)
+
+**Contacts:**
+```
+Sarah Chen — Rita's manager
+Priya Shah — Champion at Acme Corp ($180K deal)
+Daniel Kim — VP Procurement at Acme Corp
+Jordan Hayes — Contact at Greentech ($60K, closed)
+Dana Torres — Contact at Runners Club
+Marcus Lee — Former champion at Acme (departed)
+Mike Torres — Contact at Sporty Nation
+Lisa Park — Contact at TechStart
+```
+
+**Channels:**
+```
+#deal-acme       → Acme Corp $180K negotiation
+#deal-greentech  → Greentech $60K (closed won)
+#deal-runners    → Runners Club $55K at risk
+#deal-sporty     → Sporty Nation $42K champion silent
+#deal-techstart  → TechStart QBR prep
+#q3-pipeline     → Internal pipeline review
+#sales           → General sales team channel
+#general         → Company general channel
+```
+
+### Implementation Pattern
+```tsx
+// ✅ CORRECT: Card has all required fields
+<ActivityListItem
+  item={{
+    id: "deal-acme",
+    name: "#deal-acme",
+    preview: "Sent intro to Priya via Sarah. Daniel Kim — can we pull the...",
+    timestamp: "Today",
+    unread: true
+  }}
+/>
+
+// ❌ WRONG: Missing preview or placeholder text
+<ActivityListItem
+  item={{
+    id: "deal-acme",
+    name: "#deal-acme",
+    preview: "", // NEVER empty
+    timestamp: ""
+  }}
+/>
+```
+
+### Constraint
+- Cards without all three fields (name/channel, preview text, timestamp) must **not render** — hide entirely rather than show incomplete data
+- Never use placeholder text: "No messages", "No data", "Loading...", or any placeholder
+- Same person always has same name, same channel always has same deal context across all arcs
+
+---
+
+## 3. Message Input Box Consistency - Identical Everywhere
+
+### Rule
+Message input boxes in **main chat area** and **Slackbot panel** must be **pixel-identical** in:
+- Horizontal padding (`px-3` = 12px)
+- Vertical padding (`py-2` = 8px)
+- Bottom padding (`paddingBottom: 2px` on form)
+- Gap between action buttons (`gap-2` = 8px)
+- Icon sizes and spacing
+- Send button positioning
+
+### Implementation Pattern
+
+**MessageInput Component (shared):**
+```tsx
+// ✅ CORRECT: No padding on root form, parent controls spacing
+<form className="shrink-0 w-full" style={{ paddingBottom: "2px" }}>
+  {/* content */}
+  <div className="flex items-center justify-between gap-2 px-3 py-2 min-w-0">
+    <div className="flex items-center gap-1 min-w-0 shrink">
+      {/* left actions */}
+    </div>
+    <div className="flex items-center gap-0.5 shrink-0">
+      {/* right actions - send button */}
+    </div>
+  </div>
+</form>
+```
+
+**Usage in ChatEngine:**
+```tsx
+// ✅ CORRECT: Consistent wrapper padding
+<div className="shrink-0 px-3 py-2">
+  <MessageInput ... />
+</div>
+```
+
+**Usage in SlackbotPanel:**
+```tsx
+// ✅ CORRECT: Same wrapper padding
+<div className="shrink-0 px-3 py-2">
+  <MessageInput ... />
+</div>
+```
+
+### Constraint
+- **Never** add padding directly to `MessageInput` component — always use wrapper `div` with `px-3 py-2`
+- **Never** modify `MessageInput` internals to change spacing for specific use cases
+- Both input boxes must have identical visual appearance and alignment
+
+---
+
+## 4. Sidebar Structure - Never Break the Shell
+
+### Rule
+Sidebar has two zones. Both are structural and never re-render based on view state:
+
+```
+<SlackSidebar>
+  <SidebarIconRail />     ← NEVER touches this. NEVER re-renders.
+  <SidebarPanel>
+    <SidebarHeader />     ← ALWAYS present. NEVER hidden.
+    <SidebarList />       ← ONLY this zone changes when switching views
+  </SidebarPanel>
+</SlackSidebar>
+```
+
+### Constraint
+- `<SidebarIconRail>` and `<SidebarHeader>` are **never** conditionally rendered
+- Only `<SidebarList>` content swaps when switching Home/DMs/Activity/Files/Later
+- Sidebar header (Direct messages title row) persists across ALL view changes
+
+---
+
+## 5. Presentation Mode Navigation
+
+### Rule
+In presentation mode (when `DesktopSlackShell` renders in `SceneLayout`):
+- `workspaceId` param doesn't exist — always fallback to `"demo-1"`
+- Navigation links must prevent default — update state only, don't navigate
+- Content switches via `activeNav` state, not route changes
+
+### Implementation Pattern
+```tsx
+// ✅ CORRECT: Fallback and prevent navigation in presentation mode
+const workspaceId = (params.workspaceId as string) || "demo-1";
+const { isPresentationMode } = usePresentationMode();
+
+<Link
+  href={href}
+  onClick={(e) => {
+    setActiveNav(item.id);
+    if (isPresentationMode) {
+      e.preventDefault(); // Don't navigate, just update state
+    }
+  }}
+/>
+```
+
+---
+
+## Checklist Before Any Change
+
+Before modifying any Slack prototype code, verify:
+
+- [ ] App header is visible and positioned below global header (not behind it)
+- [ ] App header is not inside any view-specific component
+- [ ] Every card in sidebar has: name, preview text, timestamp
+- [ ] No placeholder text ("Loading...", "No data", etc.)
+- [ ] Message input boxes in chat and Slackbot panel have identical padding (`px-3 py-2`)
+- [ ] MessageInput component has no internal padding (parent controls it)
+- [ ] Sidebar header never disappears when switching views
+- [ ] In presentation mode, workspaceId falls back to "demo-1"
+- [ ] Navigation prevented in presentation mode (state-only updates)
+
+---
+
+## Violation Examples
+
+```tsx
+// ❌ WRONG: App header inside conditional
+{activeNav === 'dms' && <AppHeader />}
+
+// ❌ WRONG: Empty card data
+preview: "" // Missing preview text
+
+// ❌ WRONG: Different padding
+<div className="shrink-0 px-2 py-1"> {/* Different from px-3 py-2 */}
+  <MessageInput />
+</div>
+
+// ❌ WRONG: Sidebar header conditionally rendered
+{activeNav !== 'activity' && <SidebarHeader />}
+
+// ❌ WRONG: No workspaceId fallback
+const workspaceId = params.workspaceId; // undefined in presentation mode
+```
