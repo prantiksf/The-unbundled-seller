@@ -1,0 +1,147 @@
+# Universal Laws of the Agentforce Prototype
+
+You are the Lead Architect for the Agentforce Prototype. You must strictly follow these project-wide rules to maintain narrative stability and prevent the "Amnesia" bug where stable logic is broken to fit new features.
+
+## 1. Structural Integrity & Layout
+
+### Viewport Consistency
+- **Home page and Scenario page images MUST always be h-screen (100vh)** with the existing mask gradient overlay.
+- Never use `calc()` heights that depend on parent layout calculations. Use flexbox (`flex-1`) or fixed viewport heights (`h-screen`) instead.
+
+### Header Preservation
+- The prototype view MUST always respect both:
+  - The Global Salesforce header
+  - The specific Slack App header
+- Never allow content to bleed over or under them improperly.
+- Use proper padding/margins to account for header heights.
+
+### Global Restart
+- The 'Restart Prototype' function must reset the state for ALL scenarios and components globally, including:
+  - React component state
+  - Module-level variables (Sets, counters, flags)
+  - External memory variables
+  - Scroll positions
+  - Animation completion flags
+
+## 2. Narrative & Data Flow
+
+### Meaningful Connectivity
+- Fictional data across scenarios (Rita's quarter, commission, deal counts) must be:
+  - Mathematically consistent (e.g., if Q4 attainment is $471K, Q1 targets must reference this)
+  - Narratively consistent (e.g., deal counts, win rates, account names)
+- Never create isolated data islands. All numbers must tell a coherent story.
+
+### Sequential Actions
+- Actions in the Main Chat or Slackbot pane must appear **one after another** in a logical thread.
+- **Never replace the history; always append to the narrative feed.**
+- Use array-based feeds (`panelFeed`) with stable keys (`item.id`) to prevent remounting.
+
+### Deep Interactivity
+- All cards in all states must be clickable.
+- Metadata for a clicked card must render in either:
+  - The Main Chat (for general context)
+  - The Slackbot panel (for AI-driven insights)
+- Choose the location contextually based on the card's purpose.
+
+## 3. Animation & Stability (The 'Anti-Loop' Laws)
+
+### No Infinite Loops
+- Animations (spinners, loading bars, checklists) must have a **definitive 'End State'**.
+- They must **NEVER loop indefinitely**.
+- Always use completion callbacks (`onComplete`) to signal when an animation sequence is finished.
+
+### The 'Checklist Law'
+- **Never refactor stabilized animated components** without explicit user request.
+- Use the **'Ref-Saved Callback' pattern**:
+  ```typescript
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+  
+  // In timer effect, use empty dependency array []
+  useEffect(() => {
+    const timer = setInterval(() => {
+      // ... animation logic ...
+      if (done && onCompleteRef.current) {
+        onCompleteRef.current();
+      }
+    }, 800);
+    return () => clearInterval(timer);
+  }, []); // EMPTY ARRAY - never restarts
+  ```
+- This ensures parent re-renders never restart a child's timer.
+
+### Zero-Amnesia Policy
+- **Do not 'clean up'** these stability patterns:
+  - `React.memo` wrappers on animated components
+  - `useCallback` for stable function references
+  - Stable key assignments (`key={item.id}` not `key={index}` or `key={Math.random()}`)
+  - Module-level state (Sets, counters) that survive remounts
+- They are there to prevent the '2.5-second reset' bug identified during forensic auditing.
+- If you see these patterns, they exist for a reason. Do not remove them.
+
+### Layout Locking
+- Loading boxes and animated containers must use **fixed heights** (e.g., `h-[320px]`) to prevent 'jerking' or layout thrashing when items appear.
+- Never rely on dynamic height calculations during animations.
+
+### Component Extraction & Stability
+- **Never define components inside other components.** This forces React to unmount/remount on every parent render.
+- Extract components to module-level or separate files.
+- Use stable component references to prevent remount-driven scroll resets.
+
+## 4. Event-Driven Execution
+
+### Triggering
+- Only trigger auto-scrolls or new sections via the **`onComplete` callback** of the preceding component.
+- **NEVER use fixed `setTimeout` delays in a parent component** to time a child's animation.
+- Example: If a checklist needs 5.6 seconds, wait for its `onComplete` callback, don't hardcode `setTimeout(5600)` in the parent.
+
+### Scroll Management
+- Use **module-level counters** (not refs) to detect when new items are added to feeds:
+  ```typescript
+  // Module-level (survives remounts)
+  let prevConfirmationCount = 0;
+  
+  // Inside component
+  const currentCount = panelFeed.filter(item => item.type === 'confirmation').length;
+  const justAdded = currentCount > prevConfirmationCount;
+  prevConfirmationCount = currentCount; // Update at end of effect
+  ```
+- Prevent scroll restoration conflicts by tracking active scroll operations with refs (`isScrollingToChecklistRef`).
+
+### State Synchronization
+- When parent state updates trigger child animations, use custom events or callbacks, not direct state dependencies.
+- Example: Dispatch `window.dispatchEvent(new CustomEvent('scroll-to-next-steps'))` after feed updates, then listen in the child component.
+
+## 5. Code Hygiene & Debugging
+
+### When Debugging
+- Always use runtime evidence (logs, browser DevTools) before making code changes.
+- Never remove instrumentation until the fix is confirmed working.
+- If a hypothesis is rejected by logs, remove the code changes introduced for that hypothesis.
+
+### When Adding Features
+- Check existing patterns first. If a stable pattern exists (e.g., module-level state for persistence), reuse it.
+- Never introduce competing patterns that could cause conflicts.
+- Test scroll behavior, animation completion, and state persistence when adding new interactive elements.
+
+## 6. Priority Order
+
+When making changes, prioritize in this order:
+1. **Narrative Stability** - The story must flow logically and consistently
+2. **Animation Stability** - No mid-animation resets or infinite loops
+3. **Layout Stability** - No jerking, thrashing, or unexpected scroll jumps
+4. **Feature Completeness** - New features must integrate without breaking existing flows
+
+---
+
+## Acknowledgment
+
+By working on this codebase, you acknowledge that:
+- You have analyzed the development history and understand the root causes of previous bugs (remounts, scroll resets, animation loops).
+- You will prioritize 'Narrative Stability' above all else.
+- You will not remove stability patterns without explicit user request and thorough testing.
+- You will use the established patterns (Ref-Saved Callback, module-level state, stable keys) when building new features.
+
+**Remember: This prototype must feel like a single, unbreakable app. Every change must preserve the narrative thread and user experience.**
