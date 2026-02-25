@@ -1,8 +1,68 @@
 "use client";
 
-import React from "react";
+import React, { memo } from "react";
+import Image from "next/image";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
 import { IconLayoutGrid, IconInfo, IconBell, IconClock } from "@/components/icons";
+import { getMessageAvatarUrl } from "@/context/DemoDataContext";
+
+// Universal ToolIcon component with native Slack-style tooltip (shared with Arc1AgentforcePanel)
+interface ToolIconProps {
+  name: string;
+  size?: "sm" | "md";
+}
+
+const ToolIcon = memo(function ToolIcon({ name, size = "md" }: ToolIconProps) {
+  // Strict mapping: tool names to exact PNG filenames (handling spaces with encodeURI)
+  const toolMap: Record<string, string> = {
+    "Salesforce": "/Salesforce.png",
+    "Gmail": "/Gmail.png",
+    "Highspot": "/Highspot.png",
+    "Gong": "/gong.png", // Lowercase filename
+    "Google Calendar": "/Google Calendar.png", // Exact string with space
+    "Google Drive": "/Google Drive.png", // Exact string with space
+    "Clari": "/Clari.png",
+    "Salesloft": "/salesloft.png", // Lowercase filename
+    "Slack": "/Slack.png",
+  };
+
+  const iconPath = toolMap[name] || null;
+  // Use encodeURI to handle spaces in filenames (e.g., "Google Calendar.png")
+  const encodedPath = iconPath ? encodeURI(iconPath) : null;
+  const sizeClasses = size === "sm" ? "w-4 h-4" : "w-6 h-6";
+  const pixelSize = size === "sm" ? 16 : 24;
+
+  return (
+    <div className="group relative cursor-pointer inline-flex items-center justify-center">
+      {encodedPath ? (
+        <Image
+          src={encodedPath}
+          alt={name}
+          width={pixelSize}
+          height={pixelSize}
+          className={`${sizeClasses} shrink-0 object-contain`}
+          style={{ verticalAlign: 'middle' }}
+        />
+      ) : (
+        <div
+          className={`${sizeClasses} rounded-full bg-gray-300 shrink-0 flex items-center justify-center`}
+          title={name}
+          aria-label={name}
+        />
+      )}
+      {/* Tooltip with bottom nubbin */}
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block pointer-events-none z-[100]">
+        <div className="bg-gray-900 text-white text-[10px] px-2 py-1 rounded shadow-lg whitespace-nowrap relative">
+          {name}
+          {/* Bottom nubbin (triangle) */}
+          <div className="absolute top-full left-1/2 -translate-x-1/2">
+            <div className="w-0 h-0 border-4 border-transparent border-t-gray-900" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export interface SlackBlock {
   type: string;
@@ -24,17 +84,107 @@ export interface SlackBlock {
 }
 
 function renderMrkdwn(text: string) {
-  return text
-    .split(/(\*[^*]+\*|`[^`]+`|_([^_]+)_)/g)
-    .map((part, i) => {
-      if (part?.startsWith("*") && part?.endsWith("*")) {
-        return <strong key={i}>{part.slice(1, -1)}</strong>;
+  // Handle mentions <@Name>, links <url|text>, bold *text*, code `text`, italic _text_
+  // Also handle tool links specially: <https://salesforce.com|Salesforce> · Synced
+  const toolNames = ["Salesforce", "Gmail", "Highspot", "Gong", "Google Calendar", "Google Drive", "Clari", "Salesloft", "Slack"];
+  
+  // First, replace tool links with placeholders
+  let processedText = text;
+  const toolReplacements: Array<{ placeholder: string; toolName: string }> = [];
+  let replacementIndex = 0;
+  
+  // Match tool links: <https://...|ToolName> followed by optional text
+  const toolLinkPattern = /<https?:\/\/[^|>]+\|(Salesforce|Gmail|Highspot|Gong|Google Calendar|Google Drive|Clari|Salesloft)>/g;
+  processedText = processedText.replace(toolLinkPattern, (match, toolName) => {
+    const placeholder = `__TOOL_${replacementIndex}__`;
+    toolReplacements.push({ placeholder, toolName });
+    replacementIndex++;
+    return placeholder;
+  });
+  
+  const parts = processedText.split(/(<@[^>]+>|<https?:\/\/[^|>]+\|[^>]+>|<https?:\/\/[^>\s]+>|\*[^*]+\*|`[^`]+`|_[^_]+_|__TOOL_\d+__)/g);
+  return parts.map((part, i) => {
+    if (!part) return null;
+    
+    // Check if this is a tool icon placeholder
+    const toolMatch = part.match(/__TOOL_(\d+)__/);
+    if (toolMatch) {
+      const replacement = toolReplacements[parseInt(toolMatch[1])];
+      return (
+        <span key={i} className="inline-flex items-center justify-center gap-1" style={{ verticalAlign: 'middle' }}>
+          <ToolIcon name={replacement.toolName} size="sm" />
+        </span>
+      );
+    }
+    
+    // Mentions: <@Rita Patel> - show with avatar
+    if (part.startsWith("<@") && part.endsWith(">")) {
+      const name = part.slice(2, -1);
+      const avatarUrl = getMessageAvatarUrl(name);
+      return (
+        <span key={i} className="inline-flex items-center gap-1 font-semibold" style={{ color: '#1264a3' }}>
+          {avatarUrl && (
+            <Image
+              src={avatarUrl}
+              alt=""
+              width={16}
+              height={16}
+              className="rounded-full"
+              unoptimized={avatarUrl.startsWith("/")}
+            />
+          )}
+          @{name}
+        </span>
+      );
+    }
+    
+    // Links: <https://example.com|text> or <https://example.com>
+    if (part.startsWith("<http") && part.endsWith(">")) {
+      const linkMatch = part.match(/<([^|>]+)(?:\|([^>]+))?>/);
+      if (linkMatch) {
+        const url = linkMatch[1];
+        const linkText = linkMatch[2] || url;
+        
+        // Check if link text is a tool name (for deal room timeline)
+        const toolNames = ["Salesforce", "Gmail", "Highspot", "Gong", "Google Calendar", "Google Drive", "Clari", "Salesloft", "Slack"];
+        const isToolLink = toolNames.some(tool => linkText === tool);
+        
+        if (isToolLink) {
+          // Extract remaining text after the link (e.g., " · Synced 12:34 PM")
+          // The part contains the full link, so we need to get text after it
+          // Since we're processing parts, we'll handle this in the parent context
+          return (
+            <span key={i} className="inline-flex items-center gap-1">
+              <ToolIcon name={linkText} size="sm" />
+            </span>
+          );
+        }
+        
+        return (
+          <a key={i} href={url} className="underline" style={{ color: '#1264a3' }} target="_blank" rel="noopener noreferrer">
+            {linkText}
+          </a>
+        );
       }
-      if (part?.startsWith("`") && part?.endsWith("`")) {
-        return <code key={i} className="bg-gray-100 px-1 rounded text-sm">{part.slice(1, -1)}</code>;
-      }
-      return part;
-    });
+    }
+    
+    // Bold: *text*
+    if (part.startsWith("*") && part.endsWith("*")) {
+      return <strong key={i}>{part.slice(1, -1)}</strong>;
+    }
+    
+    // Code: `text`
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return <code key={i} className="bg-gray-100 px-1 rounded text-sm">{part.slice(1, -1)}</code>;
+    }
+    
+    // Italic: _text_
+    if (part.startsWith("_") && part.endsWith("_")) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    
+    return <span key={i}>{part}</span>;
+  }).filter(Boolean);
 }
 
 const T = SLACK_TOKENS;
@@ -131,16 +281,20 @@ function Block({ block, onAction }: { block: SlackBlock; onAction?: (actionId: s
             const cleanLabel = label.replace(/^[\u{1F300}-\u{1F9FF}]+\s*/u, '').trim();
             const IconComponent = el.action_id ? iconMap[el.action_id] : null;
             
+            const isPrimary = el.style === "primary";
             return (
               <button
                 key={i}
                 type="button"
                 onClick={() => el.action_id && onAction?.(el.action_id)}
-                className="px-4 py-2 text-sm font-medium bg-white border hover:bg-[#f8f8f8] flex items-center gap-2"
+                className={`px-4 py-2 text-sm font-medium border transition-colors flex items-center gap-2 ${
+                  isPrimary 
+                    ? "bg-[#611f69] border-[#611f69] text-white hover:bg-[#4a154b]" 
+                    : "bg-white border-gray-300 hover:bg-gray-50"
+                }`}
                 style={{
                   borderRadius: `${T.radius.button}px`,
-                  borderColor: T.colors.border,
-                  color: T.colors.text,
+                  color: isPrimary ? '#ffffff' : T.colors.text,
                 }}
               >
                 {IconComponent && <IconComponent className="w-4 h-4" />}
@@ -155,7 +309,7 @@ function Block({ block, onAction }: { block: SlackBlock; onAction?: (actionId: s
       if (!block.elements) return null;
       return (
         <div
-          className="flex flex-wrap gap-2 mt-2 text-[13px]"
+          className="flex flex-col gap-1 mb-3 text-[12px]"
           style={{ color: T.colors.textSecondary }}
         >
           {block.elements.map((el, i) => (

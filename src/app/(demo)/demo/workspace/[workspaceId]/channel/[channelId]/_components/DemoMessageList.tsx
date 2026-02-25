@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import type { DemoMessage } from "@/context/DemoDataContext";
 import { getMessageAvatarUrl } from "@/context/DemoDataContext";
 import { BlockKitRenderer } from "@/components/block-kit/BlockKitRenderer";
@@ -36,9 +37,12 @@ export function DemoMessageList({ messages, channelId = "" }: DemoMessageListPro
     );
   }
 
+  const isDealRoom = channelId === "deal-acme-q1-strategic";
+
   return (
     <div className="flex-1 overflow-y-auto p-4 flex flex-col-reverse">
       <div className="space-y-3 flex flex-col">
+        {/* Team messages first (will appear at bottom due to flex-col-reverse) */}
         {reversed.map((msg) => {
           const avatarUrl = msg.authorImage ?? getMessageAvatarUrl(msg.author);
           const size = T.iconSizes.messageAvatar;
@@ -85,12 +89,20 @@ export function DemoMessageList({ messages, channelId = "" }: DemoMessageListPro
                 </div>
                 {msg.blocks ? (
                   <div
-                    className="mt-1 px-4 py-3"
-                    style={{
-                      border: `1px solid ${T.colors.border}`,
-                      borderRadius: `${T.radius.large}px`,
-                      backgroundColor: T.colors.background
-                    }}
+                    className={`mt-1 ${
+                      msg.author === "Slackbot" && channelId === "deal-acme-q1-strategic" 
+                        ? "" 
+                        : "px-4 py-3"
+                    }`}
+                    style={
+                      msg.author === "Slackbot" && channelId === "deal-acme-q1-strategic"
+                        ? {}
+                        : {
+                            border: `1px solid ${T.colors.border}`,
+                            borderRadius: `${T.radius.large}px`,
+                            backgroundColor: T.colors.background
+                          }
+                    }
                   >
                     <BlockKitRenderer blocks={msg.blocks} onAction={handleAction} />
                   </div>

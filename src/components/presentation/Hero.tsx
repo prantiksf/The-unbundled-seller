@@ -210,10 +210,10 @@ export function Hero({ onUnbundlingClick, onScenesClick }: HeroProps) {
               The CRM Paradox
             </span>
             <h2 className="text-4xl md:text-5xl leading-tight text-white mb-6" style={{ fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif", fontWeight: 700 }}>
-              For decades, we've treated sales like a numbers game.
+              The tool built to help sellers sell became the reason they couldn't.
             </h2>
             <p className="text-lg leading-relaxed" style={{ color: '#B3D9FF' }}>
-              The CRM was built to track revenue, not generate it. It became a destination you have to visit, rather than an assistant that works alongside you. The tool designed to help sellers sell became the biggest barrier to selling.
+              Somewhere along the way, the CRM stopped working for sellers and started working on them. A system built to track revenue began consuming the time needed to generate it.
             </p>
           </div>
         </div>

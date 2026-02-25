@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { DemoMessageList } from "@/app/(demo)/demo/workspace/[workspaceId]/channel/[channelId]/_components/DemoMessageList";
+import { DealCanvasTab } from "@/app/(demo)/demo/workspace/[workspaceId]/channel/[channelId]/_components/DealCanvasTab";
 import { useDemoMessages, useDemoData, type DemoMessage } from "@/context/DemoDataContext";
 import { MessageInput } from "@/components/shared/MessageInput";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
+import { cn } from "@/lib/utils";
 
 const T = SLACK_TOKENS;
 
@@ -38,6 +40,7 @@ export function ChatEngine({ channelId }: ChatEngineProps) {
   const currentMessages = useDemoMessages(channelId);
   const [chatMessages, setChatMessages] = useState<DemoMessage[]>(currentMessages);
   const [inputText, setInputText] = useState("");
+  const [activeTab, setActiveTab] = useState<"messages" | "canvas" | "files" | "bookmarks">("messages");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef<number>(currentMessages.length);
@@ -50,6 +53,15 @@ export function ChatEngine({ channelId }: ChatEngineProps) {
   const name = channel?.name ?? channelId;
   const isChannel = !!channels.find((c) => c.id === channelId);
   const displayName = isChannel ? `#${name}` : name;
+  const isDealRoom = channelId === "deal-acme-q1-strategic";
+  const tabs = isDealRoom
+    ? [
+        { id: "messages" as const, label: "Messages" },
+        { id: "canvas" as const, label: "Canvas" },
+        { id: "files" as const, label: "Files" },
+        { id: "bookmarks" as const, label: "Bookmarks" },
+      ]
+    : [];
 
   // Track scroll position to detect if user is near bottom
   const handleScroll = () => {
@@ -144,6 +156,10 @@ export function ChatEngine({ channelId }: ChatEngineProps) {
       setChatMessages((prev) => [...prev, aiMessage]);
     }, 1500);
   };
+  
+  const handleTabChange = (tab: "messages" | "canvas" | "files" | "bookmarks") => {
+    setActiveTab(tab);
+  };
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -156,23 +172,51 @@ export function ChatEngine({ channelId }: ChatEngineProps) {
           {displayName}
         </span>
       </header>
-      <div 
-        ref={messagesContainerRef} 
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto min-h-0"
-        style={{ scrollBehavior: 'auto' }}
-      >
-        <DemoMessageList messages={chatMessages} channelId={channelId} />
-        <div ref={messagesEndRef} />
-      </div>
-      <div className="shrink-0 px-3 py-2">
-        <MessageInput
-          placeholder="Reply..."
-          onSubmit={handleSendMessage}
-          value={inputText}
-          onChange={setInputText}
-        />
-      </div>
+      {isDealRoom && (
+        <div className="shrink-0 flex items-center gap-1 px-4 py-2 border-b bg-white" style={{ borderColor: T.colors.border }}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => handleTabChange(tab.id)}
+              className={cn(
+                "px-3 py-1 text-[13px] font-medium rounded transition-colors",
+                activeTab === tab.id ? "" : "hover:bg-[#f8f8f8]"
+              )}
+              style={
+                activeTab === tab.id
+                  ? { color: T.colors.text, backgroundColor: T.colors.backgroundAlt }
+                  : { color: T.colors.textSecondary }
+              }
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {isDealRoom && activeTab === "canvas" ? (
+        <DealCanvasTab />
+      ) : (
+        <>
+          <div 
+            ref={messagesContainerRef} 
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto min-h-0"
+            style={{ scrollBehavior: 'auto' }}
+          >
+            <DemoMessageList messages={chatMessages} channelId={channelId} />
+            <div ref={messagesEndRef} />
+          </div>
+          <div className="shrink-0 px-3 py-2">
+            <MessageInput
+              placeholder="Reply..."
+              onSubmit={handleSendMessage}
+              value={inputText}
+              onChange={setInputText}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }

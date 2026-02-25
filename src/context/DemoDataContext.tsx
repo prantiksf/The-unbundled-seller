@@ -97,6 +97,7 @@ const DEMO_CHANNELS: DemoChannel[] = [
   { id: "sales", name: "sales", unread: true },
   { id: "q3-pipeline", name: "q3-pipeline", unread: true },
   { id: "deal-acme", name: "deal-acme", unread: true },
+  { id: "deal-acme-q1-strategic", name: "deal-acme-q1-strategic", unread: true },
   { id: "deal-runners", name: "deal-runners" },
   { id: "deal-greentech", name: "deal-greentech" },
   { id: "deal-sporty", name: "deal-sporty" },

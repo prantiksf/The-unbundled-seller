@@ -12,6 +12,7 @@ import JotaiProvider from "@/components/providers/JotaiProvider";
 import { PresentationSceneProvider } from "@/context/PresentationSceneContext";
 import { PrototypeModeProvider } from "@/context/PrototypeModeContext";
 import { ArcNavigationProvider } from "@/context/ArcNavigationContext";
+import { ScenarioVisibilityProvider } from "@/context/ScenarioVisibilityContext";
 import { GlobalNavigationHeader } from "@/components/presentation/GlobalNavigationHeader";
 
 const lato = Lato({
@@ -41,11 +42,13 @@ export default function RootLayout({
         <PresentationSceneProvider>
           <PrototypeModeProvider>
             <ArcNavigationProvider>
-              <Toaster />
-              {hasConvex && <Modals />}
-              {/* Global Navigation Header - rendered once at root level */}
-              <GlobalNavigationHeader />
-              <NuqsAdapter>{children}</NuqsAdapter>
+              <ScenarioVisibilityProvider>
+                <Toaster />
+                {hasConvex && <Modals />}
+                {/* Global Navigation Header - rendered once at root level */}
+                <GlobalNavigationHeader />
+                <NuqsAdapter>{children}</NuqsAdapter>
+              </ScenarioVisibilityProvider>
             </ArcNavigationProvider>
           </PrototypeModeProvider>
         </PresentationSceneProvider>

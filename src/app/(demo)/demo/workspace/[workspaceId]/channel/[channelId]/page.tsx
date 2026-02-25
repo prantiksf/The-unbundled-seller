@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useLayoutEffect } from "react";
 import { useDemoMessages, useDemoData } from "@/context/DemoDataContext";
@@ -7,6 +8,7 @@ import { useNav } from "../../_context/demo-layout-context";
 import { DemoChannelHeader } from "./_components/DemoChannelHeader";
 import { DemoMessageList } from "./_components/DemoMessageList";
 import { DemoMessageInput } from "./_components/DemoMessageInput";
+import { DealCanvasTab } from "./_components/DealCanvasTab";
 
 export default function DemoChannelPage() {
   const params = useParams();
@@ -20,6 +22,7 @@ export default function DemoChannelPage() {
   const isSlackbot = dm?.isSlackbot ?? false;
   const placeholder = isDM ? "Reply..." : `Message #${channelId}`;
   const fromActivity = searchParams.get("from") === "activity";
+  const [activeTab, setActiveTab] = useState("messages");
 
   useLayoutEffect(() => {
     markChannelAsRead(channelId);
@@ -36,17 +39,25 @@ export default function DemoChannelPage() {
     }
   }, [isDM, fromActivity, setActiveNav]);
 
+  const isDealRoom = channelId === "deal-acme-q1-strategic";
+
   return (
     <div className="flex flex-col h-full min-h-0 bg-white">
       <div className="shrink-0">
-        <DemoChannelHeader channelId={channelId} />
+        <DemoChannelHeader channelId={channelId} activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <DemoMessageList messages={messages} channelId={channelId} />
-      </div>
-      <div className="shrink-0 px-3 py-2">
-        <DemoMessageInput channelId={channelId} placeholder={placeholder} />
-      </div>
+      {activeTab === "canvas" && isDealRoom ? (
+        <DealCanvasTab />
+      ) : (
+        <>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <DemoMessageList messages={messages} channelId={channelId} />
+          </div>
+          <div className="shrink-0 px-3 py-2">
+            <DemoMessageInput channelId={channelId} placeholder={placeholder} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

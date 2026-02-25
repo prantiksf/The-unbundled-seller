@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useSlackbot } from "../_context/demo-layout-context";
 import Image from "next/image";
 import { IconSearch } from "@/components/icons";
@@ -9,11 +10,10 @@ const T = SLACK_TOKENS;
 
 export function AppHeader() {
   const { isOpen, toggle } = useSlackbot();
-
   return (
     <header
       className="h-12 shrink-0 flex items-center w-full relative"
-      style={{ zIndex: 100, backgroundColor: T.colors.globalBg }}
+      style={{ zIndex: 100, backgroundColor: T.colors.globalBg, marginTop: 0 }}
     >
       {/* Spacer: align with list pillar (72px icon bar) - arrows start after */}
       <div className="w-[72px] shrink-0" aria-hidden />

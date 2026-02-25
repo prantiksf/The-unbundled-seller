@@ -388,6 +388,82 @@ export const mockChannels: Record<string, DemoMessage[]> = {
       threadLastTimestamp: "Today",
     },
   ],
+  "deal-acme-q1-strategic": [
+    {
+      id: "acme_launch",
+      author: "Slackbot",
+      authorImage: null,
+      timestamp: "Just now",
+      body: null,
+      blocks: [
+        {
+          type: "header",
+          text: {
+            type: "plain_text",
+            text: "Timeline of AI Work"
+          }
+        },
+        {
+          type: "context",
+          elements: [
+            {
+              type: "mrkdwn",
+              text: "<https://salesforce.com|Salesforce> · Synced 12:34 PM"
+            },
+            {
+              type: "mrkdwn",
+              text: "<https://gong.io|Gong> · Transcripts analyzed 12:35 PM"
+            },
+            {
+              type: "mrkdwn",
+              text: "<https://gmail.com|Gmail> · Draft generated 12:36 PM"
+            }
+          ]
+        },
+        {
+          type: "divider"
+        },
+        {
+          type: "header",
+          text: {
+            type: "plain_text",
+            text: "Plan for Human Action"
+          }
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "*Executive Summary*\n\n*Deal Context:* $270K Strategic Gap\n*Sarah Chen (Buyer) Sentiment:* Ghosting\n\nMomentum is high with the Technical Lead, but the Economic Buyer (Sarah Chen) is currently a \"Black Hole\" in Gmail and Gong."
+          }
+        },
+        {
+          type: "divider"
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "*@Mention Playbook*\n\n<@Rita Patel> (AE): Respond to Sarah's scalability concern. Draft waiting in Gmail based on Tuesday's Gong transcript.\n\n<@Priya Shah> (SE): Send the integration whitepaper requested by Daniel in Highspot.\n\n<@Jordan Hayes> (VP): Reach out to Mike Torres for an executive alignment check-in."
+          }
+        },
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: "Review Gmail Draft"
+              },
+              action_id: "review_gmail_draft",
+              style: "default"
+            }
+          ]
+        }
+      ]
+    },
+  ],
 };
 
 // Mock Activity - notifications, mentions, reactions, thread replies

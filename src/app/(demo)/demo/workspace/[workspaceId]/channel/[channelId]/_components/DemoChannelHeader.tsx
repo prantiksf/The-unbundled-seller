@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useDemoData } from "@/context/DemoDataContext";
 import { useSlackbot } from "../../../_context/demo-layout-context";
 import {
@@ -19,22 +20,44 @@ const T = SLACK_TOKENS;
 
 interface DemoChannelHeaderProps {
   channelId: string;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
-const tabs = [
-  { id: "messages", label: "Messages", active: true },
-  { id: "pins", label: "Pins" },
-  { id: "files", label: "Files" },
-  { id: "more", label: "More" },
-];
-
-export function DemoChannelHeader({ channelId }: DemoChannelHeaderProps) {
+export function DemoChannelHeader({ channelId, activeTab: controlledActiveTab, onTabChange }: DemoChannelHeaderProps) {
+  const [internalActiveTab, setInternalActiveTab] = useState("messages");
   const { channels, dms } = useDemoData();
   const { isOpen, toggle } = useSlackbot();
   const channel = channels.find((c) => c.id === channelId) ?? dms.find((d) => d.id === channelId);
   const name = channel?.name ?? channelId;
   const isChannel = !!channels.find((c) => c.id === channelId);
   const displayName = isChannel ? `#${name}` : name;
+  
+  // Use controlled tab if provided, otherwise use internal state
+  const activeTab = controlledActiveTab ?? internalActiveTab;
+  const handleTabChange = (tab: string) => {
+    if (onTabChange) {
+      onTabChange(tab);
+    } else {
+      setInternalActiveTab(tab);
+    }
+  };
+
+  // Only show Canvas tab for deal-acme-q1-strategic
+  const isDealRoom = channelId === "deal-acme-q1-strategic";
+  const tabs = isDealRoom
+    ? [
+        { id: "messages", label: "Messages" },
+        { id: "canvas", label: "Canvas" },
+        { id: "files", label: "Files" },
+        { id: "bookmarks", label: "Bookmarks" },
+      ]
+    : [
+        { id: "messages", label: "Messages" },
+        { id: "pins", label: "Pins" },
+        { id: "files", label: "Files" },
+        { id: "more", label: "More" },
+      ];
 
   return (
     <header
@@ -79,11 +102,12 @@ export function DemoChannelHeader({ channelId }: DemoChannelHeaderProps) {
           <button
             key={tab.id}
             type="button"
+            onClick={() => handleTabChange(tab.id)}
             className={cn(
               "px-3 py-1 text-[13px] font-medium rounded",
-              tab.active ? "" : "hover:bg-[#f8f8f8]"
+              activeTab === tab.id ? "" : "hover:bg-[#f8f8f8]"
             )}
-            style={tab.active ? { color: T.colors.text, backgroundColor: T.colors.backgroundAlt } : { color: T.colors.textSecondary }}
+            style={activeTab === tab.id ? { color: T.colors.text, backgroundColor: T.colors.backgroundAlt } : { color: T.colors.textSecondary }}
           >
             {tab.label}
           </button>

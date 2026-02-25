@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { usePresentationScene } from "@/context/PresentationSceneContext";
 import { usePrototypeMode } from "@/context/PrototypeModeContext";
 import { useArcNavigation } from "@/context/ArcNavigationContext";
+import { useScenarioVisibility } from "@/context/ScenarioVisibilityContext";
 import { SCENES } from "@/lib/presentation-data";
 import { useRouter } from "next/navigation";
-import { IconHome } from "@/components/icons";
+import { IconHome, IconSettings } from "@/components/icons";
+import { Monitor, Smartphone, Watch, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { resetQuotaTrackerMemory } from "./QuotaTracker";
+import { resetAnimatedCounterMemory } from "./AnimatedCounter";
+import { resetPulseDataCardMemory } from "./scenes/PulseDataCard";
+import { resetDealVelocityCardMemory } from "./scenes/DealVelocityCard";
+import { resetPipelineHealthCardMemory } from "./scenes/PipelineHealthCard";
+import { resetWinRateCardMemory } from "./scenes/WinRateCard";
+import { resetConfirmationMemory } from "./scenes/Arc1AgentforcePanel";
 
 // Arc names mapping (1-10) - Tooltip text
 const ARC_TOOLTIPS: Record<number, string> = {
@@ -48,8 +58,8 @@ const SCENE_TO_ARC: Record<number, number> = {
   8: 8,
   9: 9,
   10: 10,
-  11: 10,
-  12: 10,
+  11: 1, // New scenarios: Mobile Pulse and Watch Win map to Arc 1
+  12: 1,
   13: 10,
 };
 
@@ -69,14 +79,49 @@ const ARC_TO_SCENE: Record<number, number> = {
 
 type HeaderContext = "home" | "scenario" | "prototype";
 
+// Device icon mapping
+const getDeviceIcon = (device: 'desktop' | 'mobile' | 'watch') => {
+  switch (device) {
+    case 'desktop':
+      return Monitor;
+    case 'mobile':
+      return Smartphone;
+    case 'watch':
+      return Watch;
+    default:
+      return Monitor;
+  }
+};
+
 export function GlobalNavigationHeader() {
   const { currentScene, setCurrentScene } = usePresentationScene();
-  const { isPrototypeMode } = usePrototypeMode();
+  const { isPrototypeMode, setIsPrototypeMode } = usePrototypeMode();
   const arcNavigation = useArcNavigation();
+  const {
+    activeScenarios,
+    currentNarrativeData,
+    activeNarrative,
+    setActiveNarrative,
+    narrativeOptions,
+    hiddenArcIds,
+    toggleArcVisibility,
+    presentationDensity,
+    setPresentationDensity,
+    reorderArcs,
+  } = useScenarioVisibility();
   const router = useRouter();
-  const [hoveredArc, setHoveredArc] = useState<number | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState<number>(0);
-  const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [hoveredScenarioIndex, setHoveredScenarioIndex] = useState<number | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Determine context: home, scenario intro, or prototype viewing mode
   const context: HeaderContext = 
@@ -84,17 +129,20 @@ export function GlobalNavigationHeader() {
     isPrototypeMode ? "prototype" :
     "scenario";
 
-  // Get current arc from scene - when on home (scene 0), no arc should be active
-  const currentArc = currentScene > 0 ? (SCENE_TO_ARC[currentScene] || 1) : null;
-  const currentScreen = arcNavigation.arcState.screen || 1;
-  const currentArcName = currentArc ? (ARC_NAMES[currentArc] || `Arc ${currentArc}`) : "";
-  
-  // Get date/time from scene tag
+  // Get date/time from scene tag - try SCENES first, then scenario config
   const currentSceneData = SCENES.find((s) => s.id === currentScene);
-  const sceneTagParts = currentSceneData?.sceneTag?.split(" · ") || [];
+  const scenarioConfig = currentSceneData ? null : activeScenarios.find(s => s.sceneId === currentScene);
+  const sceneTag = currentSceneData?.sceneTag || scenarioConfig?.coverPageData.headerLine || "";
+  const sceneTagParts = sceneTag.split(" · ") || [];
   const currentDate = sceneTagParts.length >= 2 
     ? `${sceneTagParts[1]} · ${sceneTagParts[2] || ""}`.trim()
     : "January 2 · 9:00 AM";
+  
+  // Get current arc from scene - when on home (scene 0), no arc should be active
+  // For new scenarios not in SCENE_TO_ARC, default to Arc 1
+  const currentArc = currentScene > 0 ? (SCENE_TO_ARC[currentScene] || (scenarioConfig ? 1 : 1)) : null;
+  const currentScreen = arcNavigation.arcState.screen || 1;
+  const currentArcName = currentArc ? (ARC_NAMES[currentArc] || `Arc ${currentArc}`) : "";
 
   // Manage prototype-mode class on body - CSS-only visibility control
   useEffect(() => {
@@ -114,16 +162,55 @@ export function GlobalNavigationHeader() {
     router.push("/");
   };
 
-  // Handle arc change
-  const handleArcChange = (arc: number, screen: number = 1) => {
-    const targetScene = ARC_TO_SCENE[arc] || arc;
-    setCurrentScene(targetScene);
-    arcNavigation.setArc(arc, screen);
-    router.push("/");
+  // Handle arc change - now uses activeScenarios index
+  // Clicking a number always takes you to the arc's "home" (cover page), exiting prototype mode
+  const handleArcChange = (activeIndex: number, screen: number = 1) => {
+    const targetScenario = activeScenarios[activeIndex];
+    if (targetScenario) {
+      const targetScene = targetScenario.sceneId;
+      // Exit prototype mode to show cover page
+      setIsPrototypeMode(false);
+      setCurrentScene(targetScene);
+      const arc = SCENE_TO_ARC[targetScene] || 1;
+      arcNavigation.setArc(arc, screen);
+      router.push("/");
+    }
   };
 
-  // Handle restart arc
+  // Get current active index from currentScene
+  const getCurrentActiveIndex = () => {
+    return activeScenarios.findIndex(s => s.sceneId === currentScene);
+  };
+
+  // Close overlays on Escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isMenuOpen) {
+        setIsMenuOpen(false);
+      }
+      if (event.key === "Escape" && isSettingsOpen) {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    if (isMenuOpen || isSettingsOpen) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [isMenuOpen, isSettingsOpen]);
+
+  // Handle restart arc - reset prototype to screen 1 while staying in prototype mode
   const handleRestartArc = () => {
+    // Clear all memory caches to reset animations
+    resetQuotaTrackerMemory();
+    resetAnimatedCounterMemory();
+    resetPulseDataCardMemory();
+    resetDealVelocityCardMemory();
+    resetPipelineHealthCardMemory();
+    resetWinRateCardMemory();
+    resetConfirmationMemory();
+    
+    // Reset arc navigation to screen 1 (stays in prototype mode)
     arcNavigation.restartArc();
     // Trigger fade animation on content
     const contentArea = document.querySelector('[data-prototype-content]') as HTMLElement;
@@ -135,12 +222,16 @@ export function GlobalNavigationHeader() {
     }
   };
 
-  // Handle next arc
+  // Handle next arc - uses activeScenarios
   const handleNextArc = () => {
-    if (currentArc >= 10) {
-      handleArcChange(1, 1); // Wrap to Arc 1
+    const currentIndex = getCurrentActiveIndex();
+    if (currentIndex >= 0 && currentIndex < activeScenarios.length - 1) {
+      handleArcChange(currentIndex + 1, 1);
     } else {
-      handleArcChange(currentArc + 1, 1);
+      // Wrap to first active scenario
+      if (activeScenarios.length > 0) {
+        handleArcChange(0, 1);
+      }
     }
     // Fade transition
     const contentArea = document.querySelector('[data-prototype-content]') as HTMLElement;
@@ -187,32 +278,126 @@ export function GlobalNavigationHeader() {
 
       if (e.key === "ArrowLeft" && e.shiftKey) {
         e.preventDefault();
-        const prevArc = currentArc <= 1 ? 10 : currentArc - 1;
-        handleArcChange(prevArc, 1);
+        const currentIndex = getCurrentActiveIndex();
+        if (currentIndex > 0) {
+          handleArcChange(currentIndex - 1, 1);
+        } else {
+          // Wrap to last active scenario
+          if (activeScenarios.length > 0) {
+            handleArcChange(activeScenarios.length - 1, 1);
+          }
+        }
         return;
       }
 
       if (e.key >= "1" && e.key <= "9") {
         e.preventDefault();
-        const targetArc = parseInt(e.key);
-        handleArcChange(targetArc, 1);
+        const targetIndex = parseInt(e.key) - 1; // Convert to 0-based index
+        if (targetIndex >= 0 && targetIndex < activeScenarios.length) {
+          handleArcChange(targetIndex, 1);
+        }
         return;
       }
       if (e.key === "0") {
         e.preventDefault();
-        handleArcChange(10, 1);
+        // Navigate to last visible scenario (index 9, which is 10th item)
+        if (activeScenarios.length > 9) {
+          handleArcChange(9, 1);
+        }
         return;
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [context, currentArc, arcNavigation]);
+  }, [context, currentScene, activeScenarios, arcNavigation]);
 
+  // Conditionally hide border-b on landing screen (no AppHeader below)
+  const shouldHideBorder = context === "home";
+  const currentActiveIndex = getCurrentActiveIndex();
+  
   return (
-    <header className="global-header fixed top-0 left-0 w-full bg-[#040A14]/80 backdrop-blur-xl border-b border-white/10 z-[10000] flex items-center justify-between px-8" style={{ height: '40px' }}>
-      {/* Left Side: Branding/Scene Info */}
+    <header className={`global-header fixed top-0 left-0 w-full bg-[#040A14]/80 backdrop-blur-xl z-[10000] flex items-center justify-between px-8 ${shouldHideBorder ? '' : 'border-b border-white/10'}`} style={{ height: '40px' }}>
+      {/* Left Side: Hamburger Menu + Branding/Scene Info */}
       <div className="flex items-center gap-4 flex-shrink-0">
+        {/* Hamburger Menu */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="w-8 h-8 rounded-full text-xs transition-colors select-none outline-none flex items-center justify-center flex-shrink-0 text-gray-500 hover:text-white hover:bg-white/10"
+            title="Toggle Scenarios"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          
+          {/* Side Drawer */}
+          {isMounted && isMenuOpen && createPortal(
+            <>
+              {/* Backdrop */}
+              <div 
+                className="fixed inset-y-0 left-96 right-0 bg-black/50 z-[10000]"
+                onClick={() => setIsMenuOpen(false)}
+              />
+              {/* Drawer */}
+              <div 
+                className={`fixed inset-y-0 left-0 w-96 bg-slate-950/50 backdrop-blur-xl border-r border-white/10 shadow-[20px_0_30px_-15px_rgba(0,0,0,0.5)] z-[10001] transform transition-transform duration-300 ease-in-out ${
+                  isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                }`}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-white/10 bg-slate-950/60">
+                  <h3 className="text-sm font-semibold text-white">Scenario Master Control</h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                {/* List */}
+                <div className="overflow-y-auto h-[calc(100vh-60px)]">
+                  {activeScenarios.map((scenario, index) => {
+                    const DeviceIcon = getDeviceIcon(scenario.device);
+                    return (
+                      <div
+                        key={scenario.id}
+                        className="flex items-start p-4 border-b border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
+                        onClick={() => {
+                          // Navigate to this scenario
+                          setCurrentScene(scenario.sceneId);
+                          router.push("/");
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        {/* Click to Navigate */}
+                        <div className="flex items-start gap-3 min-w-0 w-full">
+                          <DeviceIcon className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-white mb-1">
+                              Scene {index + 1}: {scenario.internalName}
+                            </div>
+                            <p className="text-xs text-gray-300 leading-relaxed">
+                              {scenario.description}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>,
+            document.body
+          )}
+        </div>
+        
         <img src="/slackbot-logo.svg" alt="SlackbotPro" className="w-6 h-6 flex-shrink-0" />
         <span className="text-[10px] tracking-[0.2em] text-gray-500 uppercase font-medium whitespace-nowrap">
           SlackbotPro <span className="mx-2 text-white/20">|</span> {context === "home" ? "SCENE 0" : currentArc ? `ARC ${currentArc} · ${currentDate}` : "SCENE 0"}
@@ -225,14 +410,6 @@ export function GlobalNavigationHeader() {
         <button
           type="button"
           onClick={handleHome}
-          onMouseEnter={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const navContainer = e.currentTarget.closest('nav') as HTMLElement;
-            if (navContainer) {
-              const navRect = navContainer.getBoundingClientRect();
-              setTooltipPosition(rect.left + rect.width / 2 - navRect.left);
-            }
-          }}
           className={`w-8 h-8 rounded-full text-xs transition-colors select-none outline-none flex items-center justify-center flex-shrink-0 ${
             currentScene === 0 ? 'bg-white text-black font-bold' : 'text-gray-500 hover:text-white'
           }`}
@@ -240,48 +417,43 @@ export function GlobalNavigationHeader() {
           <IconHome width={16} height={16} stroke="currentColor" strokeWidth={2} />
         </button>
 
-        {/* Arc Numbers */}
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((arcNum) => {
-          // Only highlight arc number if we're NOT on home (currentScene !== 0) AND it matches currentArc
-          const isActive = currentScene !== 0 && arcNum === currentArc;
+        {/* Arc Numbers - Dynamically numbered based on activeScenarios */}
+        {activeScenarios.map((scenario, index) => {
+          const displayNumber = index + 1; // Dynamic numbering: 1, 2, 3...
+          const arcNum = SCENE_TO_ARC[scenario.sceneId] || 1;
+          // Only highlight if we're NOT on home AND this scenario matches currentScene
+          const isActive = currentScene !== 0 && scenario.sceneId === currentScene;
+          const DeviceIcon = getDeviceIcon(scenario.device);
           return (
-            <div key={arcNum} className="relative">
+            <div key={scenario.id} className="relative group">
               <button
                 type="button"
-                onClick={() => handleArcChange(arcNum, 1)}
-                onMouseEnter={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const navContainer = e.currentTarget.closest("nav") as HTMLElement;
-                  if (navContainer) {
-                    const navRect = navContainer.getBoundingClientRect();
-                    setTooltipPosition(rect.left + rect.width / 2 - navRect.left);
-                  }
-                  tooltipTimeoutRef.current = setTimeout(() => {
-                    setHoveredArc(arcNum);
-                  }, 400);
+                onClick={() => handleArcChange(index, 1)}
+                onMouseEnter={() => {
+                  hoverTimeoutRef.current = setTimeout(() => {
+                    setHoveredScenarioIndex(index);
+                  }, 300);
                 }}
                 onMouseLeave={() => {
-                  if (tooltipTimeoutRef.current) {
-                    clearTimeout(tooltipTimeoutRef.current);
+                  if (hoverTimeoutRef.current) {
+                    clearTimeout(hoverTimeoutRef.current);
                   }
-                  setHoveredArc(null);
+                  setHoveredScenarioIndex(null);
                 }}
                 className={`w-8 h-8 rounded-full text-xs transition-colors select-none outline-none flex items-center justify-center flex-shrink-0 ${
                   isActive ? 'bg-white text-black font-bold' : 'text-gray-500 hover:text-white'
                 }`}
               >
-                {arcNum}
+                {displayNumber}
               </button>
-              {/* Tooltip */}
-              {hoveredArc === arcNum && (
-                <div 
-                  className="arc-tooltip"
-                  style={{
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                  }}
-                >
-                  {ARC_TOOLTIPS[arcNum]}
+              {/* Hover Card */}
+              {hoveredScenarioIndex === index && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-lg p-3 shadow-xl z-50 pointer-events-none">
+                  <div className="flex items-center gap-2 mb-2">
+                    <DeviceIcon className="w-4 h-4 text-white flex-shrink-0" />
+                    <span className="text-sm font-bold text-white">{scenario.internalName}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 leading-relaxed">{scenario.description}</p>
                 </div>
               )}
             </div>
@@ -291,6 +463,14 @@ export function GlobalNavigationHeader() {
 
       {/* Right Zone - Context Dependent */}
       <div className="flex items-center gap-3 flex-shrink-0 ml-auto" style={{ gap: "12px" }}>
+        <button
+          type="button"
+          onClick={() => setIsSettingsOpen(true)}
+          className="w-8 h-8 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center"
+          title="Pitch Engine Settings"
+        >
+          <IconSettings width={16} height={16} />
+        </button>
         {context === "prototype" ? (
           <>
             {/* ↺ Restart Arc */}
@@ -359,6 +539,153 @@ export function GlobalNavigationHeader() {
           </button>
         )}
       </div>
+      {isMounted && isSettingsOpen && createPortal(
+        <>
+          <div
+            className="fixed inset-0 bg-black/55 z-[10010]"
+            onClick={() => setIsSettingsOpen(false)}
+          />
+          <div className="fixed inset-0 z-[10011] flex items-center justify-center p-4">
+            <div className="w-full max-w-xl rounded-2xl border border-white/15 bg-slate-950/60 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col" style={{ minHeight: '680px' }}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/70">
+                <div>
+                  <h3 className="text-white text-base font-semibold">Pitch Engine Settings</h3>
+                  <p className="text-xs text-gray-300 mt-1">Configure storyline, view mode, and designer controls.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                  aria-label="Close settings"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Scrollable body — grows to fill space */}
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto">
+                <div>
+                  <label htmlFor="storyline-select" className="block text-xs uppercase tracking-wide text-gray-300 mb-2">
+                    Select Narrative
+                  </label>
+                  <select
+                    id="storyline-select"
+                    value={activeNarrative}
+                    onChange={(e) => setActiveNarrative(e.target.value)}
+                    className="w-full rounded-lg border border-white/20 bg-[#0F172A] text-white px-3 py-2 text-sm outline-none"
+                  >
+                    {narrativeOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="viewmode-select" className="block text-xs uppercase tracking-wide text-gray-300 mb-2">
+                    Presentation Density
+                  </label>
+                  <select
+                    id="viewmode-select"
+                    value={presentationDensity}
+                    onChange={(e) => setPresentationDensity(e.target.value)}
+                    className="w-full rounded-lg border border-white/20 bg-[#0F172A] text-white px-3 py-2 text-sm outline-none"
+                  >
+                    <option value="detailed-narrative">Detailed Narrative</option>
+                    <option value="exec-ready">Exec Ready</option>
+                    <option value="auto-demo-mode">Auto Demo Mode</option>
+                  </select>
+                </div>
+                <div className="mb-4">
+                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Story Arcs</label>
+                  <div className="max-h-64 overflow-y-auto pr-2 pb-2 space-y-3">
+                    {currentNarrativeData.map((arc, index) => {
+                      const isDragging = draggedIndex === index;
+                      const isDragOver = dragOverIndex === index;
+                      return (
+                        <div
+                          key={arc.id}
+                          draggable
+                          onDragStart={(e) => {
+                            setDraggedIndex(index);
+                            e.dataTransfer.effectAllowed = "move";
+                            e.dataTransfer.setData("text/html", arc.id);
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "move";
+                            setDragOverIndex(index);
+                          }}
+                          onDragLeave={() => {
+                            setDragOverIndex(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (draggedIndex !== null && draggedIndex !== index) {
+                              reorderArcs(activeNarrative, draggedIndex, index);
+                            }
+                            setDraggedIndex(null);
+                            setDragOverIndex(null);
+                          }}
+                          onDragEnd={() => {
+                            setDraggedIndex(null);
+                            setDragOverIndex(null);
+                          }}
+                          className={`flex items-start gap-3 group p-2 rounded-lg transition-all ${
+                            isDragging ? "opacity-50 cursor-grabbing" : "cursor-grab"
+                          } ${
+                            isDragOver ? "bg-blue-500/20 border border-blue-500/50" : "hover:bg-gray-800/50"
+                          }`}
+                        >
+                          {/* Gripper Icon */}
+                          <div className="mt-1 flex-shrink-0 text-gray-500 group-hover:text-gray-400 cursor-grab active:cursor-grabbing">
+                            <svg width="12" height="16" viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <circle cx="2" cy="2" r="1.5" fill="currentColor"/>
+                              <circle cx="2" cy="6" r="1.5" fill="currentColor"/>
+                              <circle cx="2" cy="10" r="1.5" fill="currentColor"/>
+                              <circle cx="2" cy="14" r="1.5" fill="currentColor"/>
+                              <circle cx="6" cy="2" r="1.5" fill="currentColor"/>
+                              <circle cx="6" cy="6" r="1.5" fill="currentColor"/>
+                              <circle cx="6" cy="10" r="1.5" fill="currentColor"/>
+                              <circle cx="6" cy="14" r="1.5" fill="currentColor"/>
+                            </svg>
+                          </div>
+                          {/* Checkbox */}
+                          <input
+                            type="checkbox"
+                            checked={!hiddenArcIds.includes(arc.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleArcVisibility(arc.id);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 flex-shrink-0 w-4 h-4 rounded border-white/20 bg-transparent text-white focus:ring-2 focus:ring-white/20 cursor-pointer"
+                            style={{ accentColor: "#fff" }}
+                          />
+                          {/* Content */}
+                          <div className="flex flex-col flex-1 min-w-0">
+                            <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">{arc.internalName}</span>
+                            <span className="text-xs text-gray-500 leading-relaxed mt-0.5">{arc.description}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t border-white/10 bg-slate-950/70 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="rounded-lg bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-white/90 transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
     </header>
   );
 }

@@ -17,6 +17,8 @@ import { resetConfirmationMemory } from "./scenes/Arc1AgentforcePanel";
 import { usePrototypeMode } from "@/context/PrototypeModeContext";
 import { usePresentationScene } from "@/context/PresentationSceneContext";
 import { useArcNavigation } from "@/context/ArcNavigationContext";
+import { useScenarioVisibility } from "@/context/ScenarioVisibilityContext";
+import { ExecReadyLayout } from "./ExecReadyLayout";
 
 interface SceneLayoutProps {
   scene: SceneData;
@@ -37,9 +39,9 @@ const SCENE_TO_ARC: Record<number, number> = {
   8: 8,
   9: 9,
   10: 10,
-  11: 10, // Multiple scenes can map to same arc
-  12: 10,
-  13: 10,
+  11: 1, // New scenarios: Mobile Pulse and Watch Win map to Arc 1
+  12: 1,
+  13: 10, // Multiple scenes can map to same arc
 };
 
 // Map arc numbers to first scene ID in that arc
@@ -60,7 +62,12 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
   const [showProto, setShowProto] = useState(false);
   const [protoMountReady, setProtoMountReady] = useState(false);
   const [contentOpacity, setContentOpacity] = useState(1);
-  const { setIsPrototypeMode } = usePrototypeMode();
+  const { isPrototypeMode, setIsPrototypeMode } = usePrototypeMode();
+  const {
+    activeScenarios,
+    getScenarioBySceneId,
+    presentationDensity,
+  } = useScenarioVisibility();
 
   // Defer prototype content until after browser has laid out the fixed prototype zone — fixes wrong layout on first "Enter scenario" click
   useLayoutEffect(() => {
@@ -135,6 +142,14 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
     setIsPrototypeMode(false);
   }, [scene.id, setIsPrototypeMode]);
 
+  // Sync local showProto state with global isPrototypeMode context
+  // This ensures clicking numbers in nav properly closes prototype
+  useEffect(() => {
+    if (!isPrototypeMode && showProto) {
+      setShowProto(false);
+    }
+  }, [isPrototypeMode, showProto]);
+
   useEffect(() => {
     // Update prototype mode context when showProto changes
     setIsPrototypeMode(showProto);
@@ -157,31 +172,78 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
     }
   }, [scene.id]); // Reset whenever Scene 1 becomes active
 
-  // Prototype component mapping
-  const PROTOTYPE_MAP: Record<number, React.ComponentType<any>> = {
-    1: Scene1,
-    2: DesktopSlackShell,
-    3: Scene2,
-    4: Scene2,
-    6: DesktopSlackShell,
+  // Component registry (supports historical version keys).
+  const PROTOTYPE_COMPONENT_MAP: Record<string, React.ComponentType> = {
+    "Scene1": Scene1,
+    "Scene2": Scene2,
+    "DesktopSlackShell": DesktopSlackShell,
+    "SlackMyDay_V1": Scene1,
+    "SlackMyDay_V2": Scene1,
+    "WatchWin_V1": Scene2,
+    "WatchWin_V2": Scene2,
+    "AutoClose_V1": DesktopSlackShell,
+    "AutoClose_V2": DesktopSlackShell,
+    "DesktopRecovery_V1": DesktopSlackShell,
+    "DesktopRecovery_V2": DesktopSlackShell,
   } as const;
 
-  // Determine which shell to render based on scene ID
+  const hasPrototypeFromConfig = Boolean(
+    scene.prototypeComponent && PROTOTYPE_COMPONENT_MAP[scene.prototypeComponent]
+  );
+  const hasPrototypeFromLegacy = Boolean(scene.protoUrl || [1, 2, 3, 4, 6].includes(scene.id));
+
+  const renderComponentByKey = (componentKey: string) => {
+    const Component = PROTOTYPE_COMPONENT_MAP[componentKey];
+    if (Component) {
+      if (componentKey.includes("Scene1") || componentKey === "SlackMyDay_V1" || componentKey === "SlackMyDay_V2") {
+        return <Scene1 onNext={() => {}} skipNarrative={true} />;
+      }
+      if (componentKey.includes("Scene2") || componentKey === "WatchWin_V1" || componentKey === "WatchWin_V2") {
+        return <Scene2 onNext={() => {}} sceneId={scene.id} />;
+      }
+      if (
+        componentKey.includes("DesktopSlackShell") ||
+        componentKey === "AutoClose_V1" ||
+        componentKey === "AutoClose_V2" ||
+        componentKey === "DesktopRecovery_V1" ||
+        componentKey === "DesktopRecovery_V2"
+      ) {
+        return <DesktopSlackShell defaultNav="dms" defaultChannelId="slackbot" hideHeader={false} />;
+      }
+      return <Component />;
+    }
+    return null;
+  };
+
+  // Determine which shell to render based on prototypeComponent from scenario config
   const renderProtoZone = () => {
-    const ProtoComponent = PROTOTYPE_MAP[scene.id];
+    // First, try to use prototypeComponent from scenario config
+    if (scene.prototypeComponent) {
+      const rendered = renderComponentByKey(scene.prototypeComponent);
+      if (rendered) {
+        return rendered;
+      }
+    }
+
+    // Fallback: Legacy mapping by scene ID for scenes without prototypeComponent
+    const LEGACY_PROTOTYPE_MAP: Record<number, React.ComponentType> = {
+      1: Scene1,
+      2: DesktopSlackShell,
+      3: Scene2,
+      4: Scene2,
+      6: DesktopSlackShell,
+    } as const;
     
-      if (ProtoComponent) {
-        // Scene 1: Custom Scene1 component with Agentforce dashboard
-        if (scene.id === 1) {
-          return <Scene1 onNext={() => {}} skipNarrative={true} />;
-        }
-        // Scenes 2, 6: Slack with specific props
-        if ([2, 6].includes(scene.id)) {
-          return <DesktopSlackShell defaultNav="dms" defaultChannelId="slackbot" hideHeader={false} />;
-        }
-      // Scenes 3, 4: Apple Watch
+    const LegacyComponent = LEGACY_PROTOTYPE_MAP[scene.id];
+    if (LegacyComponent) {
+      if (scene.id === 1) {
+        return <Scene1 onNext={() => {}} skipNarrative={true} />;
+      }
+      if ([2, 6].includes(scene.id)) {
+        return <DesktopSlackShell defaultNav="dms" defaultChannelId="slackbot" hideHeader={false} />;
+      }
       if ([3, 4].includes(scene.id)) {
-        return <Scene2 onNext={() => {}} />;
+        return <Scene2 onNext={() => {}} sceneId={scene.id} />;
       }
     }
 
@@ -197,8 +259,13 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
     );
   };
 
+  // Conditional rendering: Exec Ready density uses dark, metrics-focused layout
+  if (presentationDensity === "exec-ready") {
+    return <ExecReadyLayout scene={scene} onBack={onBack} onPrev={onPrev} onNext={onNext} />;
+  }
+
   return (
-    <div className="sp fixed z-[200] overflow-hidden" style={{ background: "var(--bg)", animation: "pageIn 0.4s ease both", top: "var(--header-height, 40px)", left: 0, right: 0, width: "100vw", minWidth: "100%", height: "calc(100vh - var(--header-height, 40px))", pointerEvents: showProto ? 'none' : 'auto' }}>
+    <div className="sp fixed z-[200] overflow-hidden" style={{ background: "var(--bg)", animation: showProto ? undefined : "pageIn 0.4s ease both", top: "var(--header-height, 40px)", left: 0, right: 0, width: "100vw", minWidth: "100%", height: "calc(100vh - var(--header-height, 40px))", pointerEvents: showProto ? 'none' : 'auto' }}>
       {/* Split layout - overlapping editorial feel */}
       {!showProto && (
         <div className="relative w-full h-full bg-[#E5EEFB] flex overflow-hidden gap-0 min-w-0" style={{ width: '100%', minWidth: '100%', zIndex: 1 }}>
@@ -308,8 +375,11 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
                 <div key={`footer-${scene.id}`} className="animate-reveal opacity-0 h-[80px] shrink-0 flex items-center justify-between border-t mt-4" style={{ animationDelay: '500ms', borderColor: 'rgba(0, 89, 255, 0.2)' }}>
                 {/* Left: Enter Prototype Button */}
                 <div className="flex-shrink-0">
-                  {scene.protoUrl || [1, 2, 3, 4, 6].includes(scene.id) ? (
-                    <button className="btn-proto inline-flex items-center gap-[9px] rounded-xl px-5 py-[13px] font-sans text-[12.5px] font-semibold cursor-pointer tracking-[0.01em] transition-all duration-[0.18s] ease whitespace-nowrap" style={{ background: "#0059FF", color: "#FFFFFF", borderRadius: "8px" }} onClick={() => setShowProto(true)} onMouseEnter={(e) => { e.currentTarget.style.background = "#0066FF"; e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 24px rgba(0, 89, 255, 0.4)"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "#0059FF"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
+                  {hasPrototypeFromConfig || hasPrototypeFromLegacy ? (
+                    <button className="btn-proto inline-flex items-center gap-[9px] rounded-xl px-5 py-[13px] font-sans text-[12.5px] font-semibold cursor-pointer tracking-[0.01em] transition-all duration-[0.18s] ease whitespace-nowrap" style={{ background: "#0059FF", color: "#FFFFFF", borderRadius: "8px" }} onClick={() => {
+                      setShowProto(true);
+                      setIsPrototypeMode(true);
+                    }} onMouseEnter={(e) => { e.currentTarget.style.background = "#0066FF"; e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 24px rgba(0, 89, 255, 0.4)"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "#0059FF"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
                       Enter Prototype <span className="btn-arr text-[15px] transition-transform duration-[0.18s]" style={{ transform: "translateX(0)" }}>→</span>
                     </button>
                   ) : (
@@ -345,10 +415,17 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
                     <div className="w-10 h-10" /> // Spacer when no previous
                   )}
 
-                  {/* Scene Counter */}
-                  <div className="cta-meta font-mono text-[8.5px] tracking-[0.1em] uppercase whitespace-nowrap" style={{ color: "#0059FF" }}>
-                    Scene {scene.id} / {SCENES.filter(s => s.enabled && !s.isHero).length}
-                  </div>
+                  {/* Scene Counter - Uses activeScenarios for dynamic numbering */}
+                  {(() => {
+                    const currentScenario = getScenarioBySceneId(scene.id);
+                    const currentIndex = currentScenario ? activeScenarios.findIndex(s => s.id === currentScenario.id) : -1;
+                    const displayNumber = currentIndex >= 0 ? currentIndex + 1 : scene.id;
+                    return (
+                      <div className="cta-meta font-mono text-[8.5px] tracking-[0.1em] uppercase whitespace-nowrap" style={{ color: "#0059FF" }}>
+                        Scene {displayNumber} / {activeScenarios.length}
+                      </div>
+                    );
+                  })()}
 
                   {/* Next Button */}
                   {onNext ? (

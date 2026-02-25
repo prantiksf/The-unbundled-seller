@@ -8,9 +8,10 @@ import { AppleWatchShell } from "../AppleWatchShell";
 
 interface Scene2Props {
   onNext: () => void;
+  sceneId?: number; // Optional sceneId to customize content per scenario
 }
 
-export function Scene2({ onNext }: Scene2Props) {
+export function Scene2({ onNext, sceneId }: Scene2Props) {
   const [step, setStep] = useState<'face' | 'short' | 'long' | 'details'>('face');
   const [showNotification, setShowNotification] = useState(false);
 
@@ -199,88 +200,178 @@ export function Scene2({ onNext }: Scene2Props) {
                         </div>
 
                         <div className="p-6 flex flex-col h-full justify-center relative z-10">
-                          {/* Slackbot icon - 1.5x scale with dynamic animation */}
-                          <motion.div 
-                            className="flex justify-center mb-4"
-                            initial={{ scale: 0, rotate: -180, opacity: 0 }}
-                            animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                            transition={{ 
-                              type: 'spring', 
-                              damping: 12, 
-                              stiffness: 200,
-                              delay: 0.2 
-                            }}
-                          >
-                            <motion.div
-                              animate={{ 
-                                scale: [1, 1.1, 1],
-                                rotate: [0, 5, -5, 0]
-                              }}
-                              transition={{
-                                duration: 0.6,
-                                delay: 0.5,
-                                ease: 'easeInOut'
-                              }}
-                            >
-                              <Image
-                                src="/slackbot-logo.svg"
-                                alt="Slackbot"
-                                width={96}
-                                height={96}
-                                className="w-24 h-24"
-                              />
-                            </motion.div>
-                          </motion.div>
+                          {sceneId === 12 ? (
+                            // Scenario 3: Approval needed notification
+                            <>
+                              {/* Slackbot icon */}
+                              <motion.div 
+                                className="flex justify-center mb-4"
+                                initial={{ scale: 0, rotate: -180, opacity: 0 }}
+                                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                                transition={{ 
+                                  type: 'spring', 
+                                  damping: 12, 
+                                  stiffness: 200,
+                                  delay: 0.2 
+                                }}
+                              >
+                                <Image
+                                  src="/slackbot-logo.svg"
+                                  alt="Slackbot"
+                                  width={96}
+                                  height={96}
+                                  className="w-24 h-24"
+                                />
+                              </motion.div>
 
-                          {/* Title - 1.5x typography with dynamic animation */}
-                          <motion.h3 
-                            className="text-white text-[2.25rem] font-bold text-center mb-3 leading-tight"
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ 
-                              type: 'spring',
-                              damping: 15,
-                              stiffness: 300,
-                              delay: 0.4 
-                            }}
-                          >
-                            <motion.span
-                              initial={{ scale: 0.8 }}
-                              animate={{ scale: 1 }}
-                              transition={{
-                                type: 'spring',
-                                damping: 10,
-                                delay: 0.6
-                              }}
-                            >
-                              Deal Closed
-                            </motion.span>
-                          </motion.h3>
+                              {/* Title */}
+                              <motion.h3 
+                                className="text-white text-[2.25rem] font-bold text-center mb-3 leading-tight"
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ 
+                                  type: 'spring',
+                                  damping: 15,
+                                  stiffness: 300,
+                                  delay: 0.4 
+                                }}
+                              >
+                                Approval needed
+                              </motion.h3>
 
-                          {/* Body text - 1.5x typography with staggered animation */}
-                          <motion.div 
-                            className="text-white text-[1.3125rem] text-center space-y-1.5"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.6 }}
-                          >
-                            <motion.p 
-                              className="text-white/90"
-                              initial={{ x: -20, opacity: 0 }}
-                              animate={{ x: 0, opacity: 1 }}
-                              transition={{ delay: 0.7, type: 'spring', damping: 20 }}
-                            >
-                              Greentech Deal Closed!
-                            </motion.p>
-                            <motion.p 
-                              className="text-white/70"
-                              initial={{ x: 20, opacity: 0 }}
-                              animate={{ x: 0, opacity: 1 }}
-                              transition={{ delay: 0.8, type: 'spring', damping: 20 }}
-                            >
-                              Quota achieved $498K
-                            </motion.p>
-                          </motion.div>
+                              {/* Body text */}
+                              <motion.div 
+                                className="text-white text-[1.3125rem] text-center mb-6"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.6 }}
+                              >
+                                <motion.p 
+                                  className="text-white/90"
+                                  initial={{ x: -20, opacity: 0 }}
+                                  animate={{ x: 0, opacity: 1 }}
+                                  transition={{ delay: 0.7, type: 'spring', damping: 20 }}
+                                >
+                                  Acme deal email needs 15% discount
+                                </motion.p>
+                              </motion.div>
+
+                              {/* Action buttons */}
+                              <motion.div 
+                                className="flex flex-col gap-3 px-4"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.8, type: 'spring', damping: 20 }}
+                              >
+                                <button
+                                  onClick={() => {
+                                    setShowNotification(false);
+                                    // For Scenario 3, skip details screen and proceed to next scene
+                                    onNext();
+                                  }}
+                                  className="bg-white text-black text-[1.125rem] font-semibold py-3 w-full rounded-full transition-colors hover:bg-gray-100 focus:outline-none select-none"
+                                  type="button"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setShowNotification(false);
+                                  }}
+                                  className="bg-[#3C3C3E] text-white text-[1.125rem] font-semibold py-3 w-full rounded-full transition-colors hover:bg-[#4C4C4E] focus:outline-none select-none"
+                                  type="button"
+                                >
+                                  Dismiss
+                                </button>
+                              </motion.div>
+                            </>
+                          ) : (
+                            // Other scenarios: Deal Closed notification
+                            <>
+                              {/* Slackbot icon - 1.5x scale with dynamic animation */}
+                              <motion.div 
+                                className="flex justify-center mb-4"
+                                initial={{ scale: 0, rotate: -180, opacity: 0 }}
+                                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                                transition={{ 
+                                  type: 'spring', 
+                                  damping: 12, 
+                                  stiffness: 200,
+                                  delay: 0.2 
+                                }}
+                              >
+                                <motion.div
+                                  animate={{ 
+                                    scale: [1, 1.1, 1],
+                                    rotate: [0, 5, -5, 0]
+                                  }}
+                                  transition={{
+                                    duration: 0.6,
+                                    delay: 0.5,
+                                    ease: 'easeInOut'
+                                  }}
+                                >
+                                  <Image
+                                    src="/slackbot-logo.svg"
+                                    alt="Slackbot"
+                                    width={96}
+                                    height={96}
+                                    className="w-24 h-24"
+                                  />
+                                </motion.div>
+                              </motion.div>
+
+                              {/* Title - 1.5x typography with dynamic animation */}
+                              <motion.h3 
+                                className="text-white text-[2.25rem] font-bold text-center mb-3 leading-tight"
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ 
+                                  type: 'spring',
+                                  damping: 15,
+                                  stiffness: 300,
+                                  delay: 0.4 
+                                }}
+                              >
+                                <motion.span
+                                  initial={{ scale: 0.8 }}
+                                  animate={{ scale: 1 }}
+                                  transition={{
+                                    type: 'spring',
+                                    damping: 10,
+                                    delay: 0.6
+                                  }}
+                                >
+                                  Deal Closed
+                                </motion.span>
+                              </motion.h3>
+
+                              {/* Body text - 1.5x typography with staggered animation */}
+                              <motion.div 
+                                className="text-white text-[1.3125rem] text-center space-y-1.5"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.6 }}
+                              >
+                                <motion.p 
+                                  className="text-white/90"
+                                  initial={{ x: -20, opacity: 0 }}
+                                  animate={{ x: 0, opacity: 1 }}
+                                  transition={{ delay: 0.7, type: 'spring', damping: 20 }}
+                                >
+                                  Greentech Deal Closed!
+                                </motion.p>
+                                <motion.p 
+                                  className="text-white/70"
+                                  initial={{ x: 20, opacity: 0 }}
+                                  animate={{ x: 0, opacity: 1 }}
+                                  transition={{ delay: 0.8, type: 'spring', damping: 20 }}
+                                >
+                                  Quota achieved $498K
+                                </motion.p>
+                              </motion.div>
+                            </>
+                          )}
                         </div>
                       </motion.div>
                     )}

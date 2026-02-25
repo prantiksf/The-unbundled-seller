@@ -20,7 +20,7 @@ interface ChatMessage {
 }
 
 // Panel feed item types for array-based feed architecture
-type PanelFeedItemType = 'greeting' | 'loading' | 'planner' | 'confirmation' | 'next-steps';
+type PanelFeedItemType = 'greeting' | 'loading' | 'planner' | 'confirmation' | 'next-steps' | 'heatmap' | 'stakeholder-insights' | 'activities';
 
 interface PanelFeedItem {
   id: string;
@@ -203,40 +203,29 @@ export function Arc1Layout() {
       setPanelFeed([{ id: 'loading-1', type: 'loading' }]);
       // Trigger panel flow - main chat stays static
       arcNavigation.setArcState({ arc: 1, screen: 2 });
-      
-      // Add planner after loading completes (minimum 3 seconds)
-      setTimeout(() => {
-        setPanelFeed(prev => {
-          // Remove loading, add planner
-          const withoutLoading = prev.filter(item => item.type !== 'loading');
-          return [...withoutLoading, { id: 'planner-1', type: 'planner', data: { stepperValue } }];
-        });
-        arcNavigation.setArcState({ arc: 1, screen: 3 });
-      }, 3000);
+      // Planner will be added via onComplete callback from LoadingRevealsComponent - NO FIXED DELAYS
     }
   };
 
   const handleScreenChange = (screen: Screen) => {
     arcNavigation.setArcState({ arc: 1, screen });
-    
-    // Auto-advance from loading to planning after 3 seconds
-    // Only update feed if loading exists and planner doesn't exist yet
-    if (screen === 2) {
-      setTimeout(() => {
-        setPanelFeed(prev => {
-          const hasLoading = prev.some(item => item.type === 'loading');
-          const hasPlanner = prev.some(item => item.type === 'planner');
-          if (hasLoading && !hasPlanner) {
-            const withoutLoading = prev.filter(item => item.type !== 'loading');
-            return [...withoutLoading, { id: 'planner-1', type: 'planner', data: { stepperValue } }];
-          }
-          return prev; // Don't update if already processed
-        });
-        arcNavigation.setArcState({ arc: 1, screen: 3 });
-      }, 3000);
-    }
+    // Screen transitions are now 100% event-driven via onComplete callbacks - NO FIXED DELAYS
   };
 
+  // Event-driven callback: Add planner when data pull loading completes
+  const handleLoadingComplete = useCallback(() => {
+    setPanelFeed(prev => {
+      // Prevent duplicate planner items
+      const hasPlanner = prev.some(item => item.type === 'planner');
+      if (hasPlanner) {
+        return prev; // Don't add duplicate
+      }
+      // Remove loading, add planner
+      const withoutLoading = prev.filter(item => item.type !== 'loading');
+      return [...withoutLoading, { id: 'planner-1', type: 'planner', data: { stepperValue } }];
+    });
+    arcNavigation.setArcState({ arc: 1, screen: 3 });
+  }, [stepperValue]);
 
   const handleApprove = () => {
     // Don't add messages to main chat - all post-approval UI goes to right panel
@@ -250,6 +239,7 @@ export function Arc1Layout() {
   };
 
   // Callback to add next-steps when checklist animation completes
+  // CRITICAL: Only add next-steps, NOT heatmap/insights (those must be user-triggered)
   const handleChecklistComplete = useCallback(() => {
     setPanelFeed(prev => {
       // Prevent duplicate next-steps items
@@ -268,6 +258,35 @@ export function Arc1Layout() {
       return newFeed;
     });
     arcNavigation.setArcState({ arc: 1, screen: 5 });
+  }, [stepperValue]);
+
+  // Handle "Review Heatmap Analysis" - show stakeholder insights table in feed
+  const handleReviewHeatmap = useCallback(() => {
+    setPanelFeed(prev => {
+      const hasInsights = prev.some(item => item.type === 'stakeholder-insights');
+      if (hasInsights) {
+        return prev; // Don't add duplicate
+      }
+      return [...prev, { id: 'acme-stakeholder-insights', type: 'stakeholder-insights', data: { stepperValue } }];
+    });
+  }, [stepperValue]);
+
+  // Handle "Enter Acme Deal Room" - navigate to deal room channel
+  const handleEnterDealRoom = useCallback(() => {
+    // Update navigation to activity tab and set channel to deal room
+    setPrimaryNav("activity");
+    setActiveChatId("deal-acme-q1-strategic");
+  }, []);
+
+  // Handle "View Account Activities" - show activities card
+  const handleViewActivities = useCallback(() => {
+    setPanelFeed(prev => {
+      const hasActivities = prev.some(item => item.type === 'activities');
+      if (hasActivities) {
+        return prev; // Don't add duplicate
+      }
+      return [...prev, { id: 'acme-activities', type: 'activities', data: { stepperValue } }];
+    });
   }, [stepperValue]);
 
   const handleQuickPrompt = (prompt: string) => {
@@ -316,6 +335,13 @@ export function Arc1Layout() {
       }
     }, [primaryNav, contextActiveChatId, setContextActiveChatId]);
 
+    // Sync deal room navigation - when activeChatId changes to deal room, update context
+    useEffect(() => {
+      if (primaryNav === "activity" && activeChatId === "deal-acme-q1-strategic" && contextActiveChatId !== "deal-acme-q1-strategic") {
+        setContextActiveChatId("deal-acme-q1-strategic");
+      }
+    }, [primaryNav, activeChatId, contextActiveChatId, setContextActiveChatId]);
+
     // When primaryNav is 'dms', always show slackbot thread
     if (primaryNav === "dms") {
       return (
@@ -353,7 +379,11 @@ export function Arc1Layout() {
           stepperValue={stepperValue}
           onStepperChange={setStepperValue}
           onApprove={handleApprove}
+          onLoadingComplete={handleLoadingComplete}
           onChecklistComplete={handleChecklistComplete}
+          onEnterDealRoom={handleEnterDealRoom}
+          onReviewHeatmap={handleReviewHeatmap}
+          onViewActivities={handleViewActivities}
           onMessageSend={handleMessageSend}
           onScreenChange={handleScreenChange}
           onQuickPrompt={handleQuickPrompt}

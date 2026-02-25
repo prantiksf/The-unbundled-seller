@@ -36,6 +36,7 @@ export interface SceneData {
   };
   protoUrl?: string | null;
   image?: string | null;
+  prototypeComponent?: string; // Component identifier from scenario config
 }
 
 export interface UnbundlingStep {

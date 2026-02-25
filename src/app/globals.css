@@ -30,15 +30,20 @@ body {
   z-index: 10000;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-8px);
-  transition: opacity 200ms ease, transform 200ms ease;
+  transform: translateY(0);
+  transition: opacity 200ms ease;
 }
 
 /* Hover reveal — Landing + Scenario only */
 body:not(.prototype-mode):hover .global-header {
   opacity: 1;
   pointer-events: all;
-  transform: translateY(0);
+  transform: translateY(0) !important;
+}
+
+/* Landing screen - ensure header is flush with no gap when visible */
+body:not(.prototype-mode):not(:has(.slack-shell)):hover .global-header {
+  transform: translateY(0) !important;
 }
 
 /* Prototype mode — always visible, no hover needed */
@@ -47,6 +52,13 @@ body.prototype-mode .global-header {
   pointer-events: all !important;
   transform: translateY(0) !important;
   transition: none !important;
+}
+
+/* Demo workspace mode — always visible, no transform gap */
+body:has(.slack-shell) .global-header {
+  opacity: 1 !important;
+  pointer-events: all !important;
+  transform: translateY(0) !important;
 }
 
 /* Arc number tooltip - polished with triangular nub */
