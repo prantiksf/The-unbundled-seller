@@ -327,13 +327,6 @@ export function Arc1Layout() {
   // This is rendered as customChatContent, so it has access to ActiveChatContext
   function Arc1ConditionalChat() {
     const { activeChatId: contextActiveChatId, setActiveChatId: setContextActiveChatId } = useActiveChat();
-    
-    // Sync DMs view - ensure slackbot is always selected
-    useEffect(() => {
-      if (primaryNav === "dms" && contextActiveChatId !== "slackbot") {
-        setContextActiveChatId("slackbot");
-      }
-    }, [primaryNav, contextActiveChatId, setContextActiveChatId]);
 
     // Sync deal room navigation - when activeChatId changes to deal room, update context
     useEffect(() => {
@@ -342,21 +335,27 @@ export function Arc1Layout() {
       }
     }, [primaryNav, activeChatId, contextActiveChatId, setContextActiveChatId]);
 
-    // When primaryNav is 'dms', always show slackbot thread
+    // When primaryNav is 'dms':
+    // - Slackbot selected (default): show the scripted Arc1 thread
+    // - Any other DM selected: show that DM's real ChatEngine
     if (primaryNav === "dms") {
-      return (
-        <Arc1SlackThread
-          key={`slack-thread-${restartKey}`}
-          currentScreen={currentScreen}
-          stepperValue={stepperValue}
-          selectedIntent={selectedIntent}
-          messages={messages}
-          onIntentSelect={handleIntentSelect}
-          onApprove={handleApprove}
-          onQuickPrompt={handleQuickPrompt}
-          onMessageSend={handleMessageSend}
-        />
-      );
+      const selectedDM = contextActiveChatId || "slackbot";
+      if (selectedDM === "slackbot") {
+        return (
+          <Arc1SlackThread
+            key={`slack-thread-${restartKey}`}
+            currentScreen={currentScreen}
+            stepperValue={stepperValue}
+            selectedIntent={selectedIntent}
+            messages={messages}
+            onIntentSelect={handleIntentSelect}
+            onApprove={handleApprove}
+            onQuickPrompt={handleQuickPrompt}
+            onMessageSend={handleMessageSend}
+          />
+        );
+      }
+      return <ChatEngine key={selectedDM} channelId={selectedDM} />;
     }
 
     // When primaryNav is 'activity', show ChatEngine for the selected channel

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ReactNode, useEffect, createContext, useContext } from "react";
+import { useState, useRef, ReactNode, useEffect, createContext, useContext } from "react";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
 import {
   ResizableHandle,
@@ -16,6 +16,9 @@ import {
   type NavView,
 } from "@/app/(demo)/demo/workspace/[workspaceId]/_context/demo-layout-context";
 import { ChatEngine } from "./ChatEngine";
+import { SlackTodayView } from "./SlackTodayView";
+import { SlackSalesView } from "./SlackSalesView";
+import { SlackActivityView } from "./SlackActivityView";
 import { AnimatePresence, motion } from "framer-motion";
 import { useDemoData } from "@/context/DemoDataContext";
 
@@ -79,12 +82,15 @@ export function DesktopSlackShell({
     }
   };
 
-  // Sync activeNav when defaultNav changes (for Arc 1 primaryNav changes)
+  // Sync activeNav ONLY when the defaultNav prop itself changes (e.g. Arc 1 forcing a nav).
+  // Must NOT include activeNav in deps — that would revert every user-initiated nav click.
+  const prevDefaultNavRef = useRef(defaultNav);
   useEffect(() => {
-    if (defaultNav && defaultNav !== activeNav) {
+    if (defaultNav !== prevDefaultNavRef.current) {
+      prevDefaultNavRef.current = defaultNav;
       setActiveNav(defaultNav);
     }
-  }, [defaultNav, activeNav]);
+  }, [defaultNav, setActiveNav]);
 
   useEffect(() => {
     if (defaultChannelId) {
@@ -117,8 +123,9 @@ export function DesktopSlackShell({
     }
   }, [activeNav, channels, dms, activeChatId, onPrimaryNavChange]);
 
-  // Use custom chat content if provided (for Scene 1), otherwise use default ChatEngine
-  const chatContent = customChatContent || (activeChatId ? <ChatEngine channelId={activeChatId} /> : (
+  // key={activeChatId} forces a full remount whenever the channel changes,
+  // guaranteeing ChatEngine's internal chatMessages state is always fresh.
+  const chatContent = customChatContent || (activeChatId ? <ChatEngine key={activeChatId} channelId={activeChatId} /> : (
     <div className="flex flex-col h-full bg-white items-center justify-center p-8">
       <p className="text-[#616061] text-sm">Select a DM from the sidebar to start a conversation.</p>
     </div>
@@ -147,18 +154,101 @@ export function DesktopSlackShell({
           <div className="slack-body flex-1 flex min-h-0 min-w-0 overflow-hidden" style={{ gap: 2 }}>
             {/* Left nav: icon bar only - no roundness */}
             <DemoIconBar onPrimaryNavChange={onPrimaryNavChange} showDMBadge={showDMBadge} />
-            {/* List + chat together: one rounded container - shadow casts left onto nav */}
-            {isSlackbotOpen ? (
-              <ResizablePanelGroup
-                direction="horizontal"
-                autoSaveId="demo-workspace-layout"
-                className="flex-1 min-w-0"
-              >
-                <ResizablePanel 
-                  minSize={20} 
-                  defaultSize={55} 
-                  className="overflow-visible"
+
+            {/* NEW: Today view — full width, no secondary sidebar */}
+            {activeNav === 'today' && (
+              <div className="flex-1 min-w-0 overflow-visible">
+                <div
+                  className="h-full overflow-hidden"
+                  style={{
+                    borderRadius: 24,
+                    boxShadow: "-6px 0 24px -4px rgba(0, 0, 0, 0.2), -2px 0 10px -2px rgba(0, 0, 0, 0.15)",
+                  }}
                 >
+                  <SlackTodayView onNavigateToActivity={() => setActiveNav('activity')} />
+                </div>
+              </div>
+            )}
+
+            {/* NEW: Sales view — full width, no secondary sidebar */}
+            {activeNav === 'sales' && (
+              <div className="flex-1 min-w-0 overflow-visible">
+                <div
+                  className="h-full overflow-hidden"
+                  style={{
+                    borderRadius: 24,
+                    boxShadow: "-6px 0 24px -4px rgba(0, 0, 0, 0.2), -2px 0 10px -2px rgba(0, 0, 0, 0.15)",
+                  }}
+                >
+                  <SlackSalesView />
+                </div>
+              </div>
+            )}
+
+            {/* NEW: Activity view — master-detail feed, no sidebar */}
+            {activeNav === 'activity' && (
+              <div className="flex-1 min-w-0 overflow-visible">
+                <div
+                  className="h-full overflow-hidden"
+                  style={{
+                    borderRadius: 24,
+                    boxShadow: "-6px 0 24px -4px rgba(0, 0, 0, 0.2), -2px 0 10px -2px rgba(0, 0, 0, 0.15)",
+                  }}
+                >
+                  <SlackActivityView />
+                </div>
+              </div>
+            )}
+
+            {/* EXISTING: List + chat together — only when NOT on Today, Sales, or Activity */}
+            {activeNav !== 'today' && activeNav !== 'sales' && activeNav !== 'activity' && (
+              isSlackbotOpen ? (
+                <ResizablePanelGroup
+                  direction="horizontal"
+                  autoSaveId="demo-workspace-layout"
+                  className="flex-1 min-w-0"
+                >
+                  <ResizablePanel 
+                    minSize={20} 
+                    defaultSize={55} 
+                    className="overflow-visible"
+                  >
+                    <div
+                      className="h-full flex overflow-hidden"
+                      style={{
+                        borderRadius: 24,
+                        boxShadow: "-6px 0 24px -4px rgba(0, 0, 0, 0.2), -2px 0 10px -2px rgba(0, 0, 0, 0.15)",
+                      }}
+                    >
+                      <DemoSidebar />
+                      <div className="flex-1 min-w-0 bg-white overflow-hidden pointer-events-auto" style={{ pointerEvents: "auto" }}>{chatContent}</div>
+                    </div>
+                  </ResizablePanel>
+                  <ResizableHandle 
+                    withHandle={false} 
+                    className="!w-[6px] shrink-0 !bg-transparent border-0 cursor-col-resize focus-visible:ring-0"
+                  />
+                  <ResizablePanel 
+                    minSize={22} 
+                    defaultSize={25} 
+                    className="overflow-visible"
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, x: 30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                      className="h-full overflow-hidden"
+                      style={{
+                        borderRadius: 24,
+                        boxShadow: "-6px 0 24px -4px rgba(0, 0, 0, 0.18), -2px 0 10px -2px rgba(0, 0, 0, 0.12)",
+                      }}
+                    >
+                      {customSlackbotPanel || <SlackbotPanel onClose={() => setIsSlackbotOpen(false)} />}
+                    </motion.div>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              ) : (
+                <div className="flex-1 min-w-0 overflow-visible">
                   <div
                     className="h-full flex overflow-hidden"
                     style={{
@@ -169,43 +259,8 @@ export function DesktopSlackShell({
                     <DemoSidebar />
                     <div className="flex-1 min-w-0 bg-white overflow-hidden pointer-events-auto" style={{ pointerEvents: "auto" }}>{chatContent}</div>
                   </div>
-                </ResizablePanel>
-                <ResizableHandle 
-                  withHandle={false} 
-                  className="!w-[6px] shrink-0 !bg-transparent border-0 cursor-col-resize focus-visible:ring-0"
-                />
-                <ResizablePanel 
-                  minSize={22} 
-                  defaultSize={25} 
-                  className="overflow-visible"
-                >
-                  <motion.div
-                    initial={{ opacity: 0, x: 30 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                    className="h-full overflow-hidden"
-                    style={{
-                      borderRadius: 24,
-                      boxShadow: "-6px 0 24px -4px rgba(0, 0, 0, 0.18), -2px 0 10px -2px rgba(0, 0, 0, 0.12)",
-                    }}
-                  >
-                    {customSlackbotPanel || <SlackbotPanel onClose={() => setIsSlackbotOpen(false)} />}
-                  </motion.div>
-                </ResizablePanel>
-              </ResizablePanelGroup>
-            ) : (
-              <div className="flex-1 min-w-0 overflow-visible">
-                <div
-                  className="h-full flex overflow-hidden"
-                  style={{
-                    borderRadius: 24,
-                    boxShadow: "-6px 0 24px -4px rgba(0, 0, 0, 0.2), -2px 0 10px -2px rgba(0, 0, 0, 0.15)",
-                  }}
-                >
-                  <DemoSidebar />
-                  <div className="flex-1 min-w-0 bg-white overflow-hidden pointer-events-auto" style={{ pointerEvents: "auto" }}>{chatContent}</div>
                 </div>
-              </div>
+              )
             )}
           </div>
         </div>

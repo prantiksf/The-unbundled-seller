@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { generateInitialsAvatar } from '@/lib/avatar-utils';
 import { useParams, useSearchParams } from "next/navigation";
 import {
   IconSearch,
@@ -22,6 +23,18 @@ import {
   IconHome,
 } from "@/components/icons";
 import {
+  Settings as SettingsIcon,
+  Pencil as EditIcon,
+  MessageSquare as MessageSquareIcon,
+  Headphones as HeadphonesIcon,
+  Sparkles as SparklesIcon,
+  Send as SendIcon,
+  Edit2 as Edit2Icon,
+  Users as UsersIcon,
+  Star as StarIcon,
+  Lock as LockIcon,
+} from "lucide-react";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -34,7 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDemoData, getAvatarUrl } from "@/context/DemoDataContext";
 import { ActivityListItem } from "./ActivityListItem";
-import { useNav, usePresentationMode } from "../_context/demo-layout-context";
+import { useNav, usePresentationMode, useDemoContext } from "../_context/demo-layout-context";
 import { useActiveChat } from "@/components/presentation/DesktopSlackShell";
 import { cn } from "@/lib/utils";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
@@ -75,8 +88,17 @@ export function DemoSidebar() {
   const channelId = (params.channelId as string) || undefined;
   const { activeNav } = useNav();
   const { isPresentationMode } = usePresentationMode();
+  const { demoContext } = useDemoContext();
   const { workspace, channels, dms, files, savedItems, getChannelPreview, isChannelRead } = useDemoData();
   const searchParams = useSearchParams();
+  
+  // STRICT NARRATIVE ISOLATION: Filter out Slackbot (Seller Edge) DM unless in N1A1 or N2A1
+  // This ensures the "Slackbot (Seller Edge)" DM exclusively appears during Narrative 1, Arc 1 and Narrative 2, Arc 1
+  // It must be completely hidden in all other scenarios (N1A2, N2A2, OTHER, etc.)
+  const shouldShowSlackbot = demoContext === 'N1A1' || demoContext === 'N2A1';
+  const filteredDms = shouldShowSlackbot 
+    ? dms 
+    : dms.filter((dm) => !dm.isSlackbot);
   
   // For activity page, check query param for selected channel
   const activityChannelId = activeNav === "activity" ? searchParams.get("channel") : null;
@@ -85,16 +107,9 @@ export function DemoSidebar() {
   const effectiveChannelId = channelId || activityChannelId;
   
   // Try to get activeChatId from context (for local state navigation)
-  let activeChatId: string | undefined;
-  let setActiveChatId: ((id: string) => void) | undefined;
-  try {
-    const chatContext = useActiveChat();
-    activeChatId = chatContext.activeChatId;
-    setActiveChatId = chatContext.setActiveChatId;
-  } catch {
-    // Context not available, fall back to URL params
-    activeChatId = channelId;
-  }
+  const chatContext = useActiveChat();
+  let activeChatId: string | undefined = chatContext.activeChatId;
+  const setActiveChatId: ((id: string) => void) = chatContext.setActiveChatId;
   const [filter, setFilter] = useState<ViewFilter>("all");
   const [search, setSearch] = useState("");
   const [unreadsOnly, setUnreadsOnly] = useState(false);
@@ -108,20 +123,20 @@ export function DemoSidebar() {
 
   const channelAndDmItems = (
     filter === "dms"
-      ? dms.map((dm) => ({ ...dm, type: "dm" as const }))
-      : [...channels.map((ch) => ({ ...ch, type: "channel" as const })), ...dms.map((dm) => ({ ...dm, type: "dm" as const }))]
+      ? filteredDms.map((dm) => ({ ...dm, type: "dm" as const }))
+      : [...channels.map((ch) => ({ ...ch, type: "channel" as const })), ...filteredDms.map((dm) => ({ ...dm, type: "dm" as const }))]
   ).filter((item) => {
     if (!search) return true;
     return item.name.toLowerCase().includes(search.toLowerCase());
   });
 
-  const dmsOnly = dms.filter((dm) => {
+  const dmsOnly = filteredDms.filter((dm) => {
     if (unreadsOnly && !dm.unread) return false;
     if (!search) return true;
     return dm.name.toLowerCase().includes(search.toLowerCase());
   });
 
-  const agentforceItems = dms.filter((dm) => dm.isSlackbot).filter((dm) => {
+  const agentforceItems = filteredDms.filter((dm) => dm.isSlackbot).filter((dm) => {
     if (unreadsOnly && !dm.unread) return false;
     if (!search) return true;
     return dm.name.toLowerCase().includes(search.toLowerCase());
@@ -138,6 +153,236 @@ export function DemoSidebar() {
   });
 
   const title = NAV_TITLES[activeNav] ?? "Activity";
+
+  // Home view: Render Slack workspace sidebar
+  if (activeNav === "home") {
+    const activeDMId = activeChatId || effectiveChannelId;
+    
+    // Find DMs by name
+    const shwetaDM = dms.find(d => d.name.toLowerCase().includes("shweta")) || dms.find(d => d.name.toLowerCase().includes("humnabadkar")) || dms[0];
+    const avinashDM = dms.find(d => d.name.toLowerCase().includes("avinash")) || dms.find(d => d.name.toLowerCase().includes("patel"));
+    const samikshaDM = dms.find(d => d.name.toLowerCase().includes("samiksha")) || dms.find(d => d.name.toLowerCase().includes("kharbanda"));
+    const prantikDM = dms.find(d => d.name.toLowerCase().includes("prantik")) || dms.find(d => d.name.toLowerCase().includes("banerjee"));
+    
+    // Determine active states - Shweta is default active if nothing selected
+    const isShwetaActive = activeDMId === shwetaDM?.id || (!activeDMId && shwetaDM);
+    const isAvinashActive = activeDMId === avinashDM?.id;
+    const isSamikshaActive = activeDMId === samikshaDM?.id;
+    const isPrantikActive = activeDMId === prantikDM?.id;
+    
+    return (
+      <aside className="w-[340px] h-full bg-[#350d36] text-[#D1C2D0] flex flex-col flex-shrink-0 border-r border-white/10 font-sans">
+        {/* Workspace Header */}
+        <div className="h-14 flex items-center justify-between px-4 border-b border-white/10 hover:bg-white/5 cursor-pointer transition-colors flex-shrink-0">
+          <div className="font-bold text-white text-[15px] flex items-center gap-1">
+            Salesforce <span className="text-xs ml-1">⌄</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="w-7 h-7 rounded hover:bg-white/10 flex items-center justify-center">
+              <SettingsIcon className="w-4 h-4 text-white" />
+            </button>
+            <button className="w-7 h-7 rounded hover:bg-white/10 flex items-center justify-center bg-white/10">
+              <EditIcon className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable Channel Tree */}
+        <div className="flex-1 overflow-y-auto py-3 custom-scrollbar relative">
+          {/* Top Links */}
+          <div className="space-y-0.5 mb-5">
+            <button className="w-full flex items-center px-4 py-1 hover:bg-white/5 text-[15px]">
+              <MessageSquareIcon className="w-4 h-4 mr-3 opacity-70" /> Threads
+            </button>
+            <button className="w-full flex items-center px-4 py-1 hover:bg-white/5 text-[15px]">
+              <HeadphonesIcon className="w-4 h-4 mr-3 opacity-70" /> Huddles
+            </button>
+            <button className="w-full flex items-center px-4 py-1 hover:bg-white/5 text-[15px]">
+              <SparklesIcon className="w-4 h-4 mr-3 opacity-70" /> Recap
+            </button>
+            <button className="w-full flex items-center justify-between px-4 py-1 hover:bg-white/5 text-[15px]">
+              <div className="flex items-center"><SendIcon className="w-4 h-4 mr-3 opacity-70" /> Drafts & sent</div>
+              <span className="text-xs flex items-center gap-1"><Edit2Icon className="w-3 h-3"/> 12</span>
+            </button>
+            <button className="w-full flex items-center px-4 py-1 hover:bg-white/5 text-[15px]">
+              <UsersIcon className="w-4 h-4 mr-3 opacity-70" /> Directories
+            </button>
+          </div>
+
+          {/* Section: Starred */}
+          <div className="mb-4">
+            <div className="px-4 py-1 flex items-center text-[13px] font-medium hover:text-white cursor-pointer group">
+              <span className="w-4 h-4 mr-1 opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs">⌄</span>
+              <StarIcon className="w-3.5 h-3.5 mr-2" /> Starred
+            </div>
+            <button className="w-full flex items-center px-4 py-1 pl-9 hover:bg-white/5 text-[15px] text-[#D1C2D0]">
+              <span className="mr-2 text-lg leading-none opacity-60">#</span> proj-ai-council
+            </button>
+          </div>
+
+          {/* Section: Direct Messages */}
+          <div className="mb-4">
+            <div className="px-4 py-1 flex items-center text-[13px] font-medium hover:text-white cursor-pointer group">
+              <span className="w-4 h-4 mr-1 flex items-center justify-center text-xs">⌄</span>
+              Direct messages
+            </div>
+            {/* Active DM - Shweta */}
+            {shwetaDM && (
+              <button 
+                onClick={() => {
+                  if (setActiveChatId) {
+                    setActiveChatId(shwetaDM.id);
+                  }
+                }}
+                className={cn(
+                  "w-full flex items-center px-4 py-1 pl-8 text-[15px] font-medium rounded-r-full mr-4",
+                  isShwetaActive ? "bg-white text-black" : "hover:bg-white/5 text-[#D1C2D0]"
+                )}
+              >
+                <div className="relative mr-2">
+                  <img 
+                    src={shwetaDM.avatarUrl || getAvatarUrl("Shweta Humnabadkar", 20) || "/shweta-avatar.png"} 
+                    className="w-5 h-5 rounded" 
+                    alt="Shweta" 
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = getAvatarUrl("Shweta Humnabadkar", 20);
+                    }}
+                  />
+                </div>
+                Shweta Humnabadkar <span className="ml-2">🗓️</span>
+              </button>
+            )}
+            {/* Avinash */}
+            {avinashDM && (
+              <button 
+                onClick={() => {
+                  if (setActiveChatId) {
+                    setActiveChatId(avinashDM.id);
+                  }
+                }}
+                className={cn(
+                  "w-full flex items-center justify-between px-4 py-1 pl-8 text-[15px] group",
+                  isAvinashActive ? "bg-white text-black font-medium rounded-r-full mr-4" : "hover:bg-white/5 text-[#D1C2D0]"
+                )}
+              >
+                <div className="flex items-center">
+                  <img 
+                    src={avinashDM.avatarUrl || getAvatarUrl("Avinash Patel", 20) || "/avinash-avatar.png"} 
+                    className="w-5 h-5 rounded mr-2" 
+                    alt="Avinash"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = getAvatarUrl("Avinash Patel", 20);
+                    }}
+                  /> 
+                  Avinash Patel
+                </div>
+                <Edit2Icon className="w-3 h-3 opacity-0 group-hover:opacity-100" />
+              </button>
+            )}
+            {/* Samiksha */}
+            {samikshaDM && (
+              <button 
+                onClick={() => {
+                  if (setActiveChatId) {
+                    setActiveChatId(samikshaDM.id);
+                  }
+                }}
+                className={cn(
+                  "w-full flex items-center justify-between px-4 py-1 pl-8 text-[15px] group",
+                  isSamikshaActive ? "bg-white text-black font-medium rounded-r-full mr-4" : "hover:bg-white/5 text-[#D1C2D0]"
+                )}
+              >
+                <div className="flex items-center">
+                  <img 
+                    src={samikshaDM.avatarUrl || getAvatarUrl("Samiksha Kharbanda", 20) || "/samiksha-avatar.png"} 
+                    className="w-5 h-5 rounded mr-2" 
+                    alt="Samiksha"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = getAvatarUrl("Samiksha Kharbanda", 20);
+                    }}
+                  /> 
+                  Samiksha Kharbanda <span className="ml-2">🗓️</span>
+                </div>
+                <Edit2Icon className="w-3 h-3 opacity-0 group-hover:opacity-100" />
+              </button>
+            )}
+            {/* Prantik */}
+            {prantikDM && (
+              <button 
+                onClick={() => {
+                  if (setActiveChatId) {
+                    setActiveChatId(prantikDM.id);
+                  }
+                }}
+                className={cn(
+                  "w-full flex items-center justify-between px-4 py-1 pl-8 text-[15px] group",
+                  isPrantikActive ? "bg-white text-black font-medium rounded-r-full mr-4" : "hover:bg-white/5 text-[#D1C2D0]"
+                )}
+              >
+                <div className="flex items-center">
+                  <div className="relative mr-2">
+                    <img 
+                      src={prantikDM.avatarUrl || getAvatarUrl("Prantik Banerjee", 20) || "/prantik-avatar.png"} 
+                      className="w-5 h-5 rounded" 
+                      alt="Prantik"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = getAvatarUrl("Prantik Banerjee", 20);
+                      }}
+                    />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-[#350d36]"></div>
+                  </div>
+                  Prantik Banerjee <span className="ml-1 opacity-70 text-sm">you</span> <span className="ml-1">🤒</span>
+                </div>
+                <Edit2Icon className="w-3 h-3 opacity-0 group-hover:opacity-100" />
+              </button>
+            )}
+          </div>
+
+          {/* Section: S-M-S */}
+          <div className="mb-4">
+            <div className="px-4 py-1 flex items-center text-[13px] font-medium hover:text-white cursor-pointer group">
+              <span className="w-4 h-4 mr-1 flex items-center justify-center text-xs">⌄</span>
+              <span className="w-3.5 h-3.5 mr-2 rounded-full border-2 border-dashed border-blue-400"></span> S-M-S
+            </div>
+            <button className="w-full flex items-center px-4 py-1 pl-9 hover:bg-white/5 text-[15px] text-white font-bold">
+              <LockIcon className="w-3 h-3 mr-2 opacity-70" /> proj-hush-contact-insights-ai-...
+            </button>
+            <button className="w-full flex items-center px-4 py-1 pl-9 hover:bg-white/5 text-[15px] text-[#D1C2D0]">
+              <LockIcon className="w-3 h-3 mr-2 opacity-70" /> proj-marketing-sales-all
+            </button>
+            <button className="w-full flex items-center px-4 py-1 pl-9 hover:bg-white/5 text-[15px] text-[#D1C2D0]">
+              <LockIcon className="w-3 h-3 mr-2 opacity-70" /> proj-salescloud-all-agents-wor...
+            </button>
+          </div>
+
+          {/* Section: Agentforce */}
+          <div className="mb-4">
+            <div className="px-4 py-1 flex items-center text-[13px] font-medium hover:text-white cursor-pointer group">
+              <span className="w-4 h-4 mr-1 flex items-center justify-center text-xs">⌄</span>
+              <span className="w-3 h-3 mr-2 rounded bg-blue-500"></span> Agentforce
+            </div>
+            <button className="w-full flex items-center px-4 py-1 pl-9 hover:bg-white/5 text-[15px] text-[#D1C2D0]">
+              <span className="mr-2 text-lg leading-none opacity-60">#</span> ai-club
+            </button>
+            <button className="w-full flex items-center px-4 py-1 pl-9 hover:bg-white/5 text-[15px] text-[#D1C2D0]">
+              <span className="mr-2 text-lg leading-none opacity-60">#</span> ux-agentic-experiences
+            </button>
+          </div>
+
+          {/* Floating Unread Pill */}
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none">
+            <button className="bg-[#e4b5f8] text-[#350d36] text-[13px] font-bold px-4 py-1.5 rounded-full shadow-lg pointer-events-auto flex items-center gap-2 hover:bg-[#d6a5eb]">
+              ↓ Unread mentions
+            </button>
+          </div>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     // Activity view swaps list content only — never changes outer shell
@@ -445,12 +690,27 @@ export function DemoSidebar() {
                 }}
               >
               <div className="relative shrink-0 mt-0.5">
-                <img src={avatarSrc} alt="" className={`w-8 h-8 rounded-md ${item.isSlackbot ? "object-contain" : "object-cover"}`} />
+                <img 
+                  src={avatarSrc} 
+                  alt="" 
+                  className={`w-8 h-8 rounded-md ${item.isSlackbot ? "object-contain" : "object-cover"}`}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (!item.isSlackbot && !target.src.startsWith('data:')) {
+                      target.src = generateInitialsAvatar(item.name, 32);
+                    } else if (item.isSlackbot) {
+                      target.src = "/slackbot-logo.svg";
+                    }
+                  }}
+                />
                 <StatusDot status={item.status} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1">
                   <span className="truncate font-medium text-white" style={{ fontSize: T.typography.body }}>{item.name}</span>
+                  {item.isSlackbot && (
+                    <span className="ml-2 text-[10px] bg-[#611f69] text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide shrink-0">Seller Edge</span>
+                  )}
                 </div>
                 {preview && (
                   <p className="mt-0.5 min-w-0 line-clamp-2 break-words" style={{ color: T.colors.dmMutedText }}>{preview}</p>
@@ -537,12 +797,27 @@ export function DemoSidebar() {
               style={style}
             >
               <div className="relative shrink-0 mt-0.5">
-                <img src={avatarSrc} alt="" className={`w-8 h-8 rounded-md ${item.isSlackbot ? "object-contain" : "object-cover"}`} />
+                <img 
+                  src={avatarSrc} 
+                  alt="" 
+                  className={`w-8 h-8 rounded-md ${item.isSlackbot ? "object-contain" : "object-cover"}`}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (!item.isSlackbot && !target.src.startsWith('data:')) {
+                      target.src = generateInitialsAvatar(item.name, 32);
+                    } else if (item.isSlackbot) {
+                      target.src = "/slackbot-logo.svg";
+                    }
+                  }}
+                />
                 <StatusDot status={item.status} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1">
                   <span className="truncate font-medium text-white" style={{ fontSize: T.typography.body }}>{item.name}</span>
+                  {item.isSlackbot && (
+                    <span className="ml-2 text-[10px] bg-[#611f69] text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide shrink-0">Seller Edge</span>
+                  )}
                 </div>
                 {preview && (
                   <p className="mt-0.5 min-w-0 line-clamp-2 break-words" style={{ color: T.colors.dmMutedText }}>{preview}</p>
@@ -649,10 +924,19 @@ export function DemoSidebar() {
                   <img src={avatarSrc} alt="" className={`w-8 h-8 rounded-md ${item.isSlackbot ? "object-contain" : "object-cover"}`} />
                   <StatusDot status={item.status} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className="truncate font-medium text-white" style={{ fontSize: T.typography.body }}>{item.name}</span>
-                  </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1">
+                  <span className="truncate font-medium text-white" style={{ fontSize: T.typography.body }}>
+                    {item.isSlackbot ? (
+                      <>
+                        {item.name}
+                        <span className="ml-2 text-[10px] bg-[#611f69] text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Seller Edge</span>
+                      </>
+                    ) : (
+                      item.name
+                    )}
+                  </span>
+                </div>
                   {preview && (
                     <p className="mt-0.5 min-w-0 line-clamp-2 break-words" style={{ color: T.colors.dmMutedText }}>{preview}</p>
                   )}
@@ -737,12 +1021,27 @@ export function DemoSidebar() {
               style={style}
             >
               <div className="relative shrink-0 mt-0.5">
-                <img src={avatarSrc} alt="" className={`w-8 h-8 rounded-md ${item.isSlackbot ? "object-contain" : "object-cover"}`} />
+                <img 
+                  src={avatarSrc} 
+                  alt="" 
+                  className={`w-8 h-8 rounded-md ${item.isSlackbot ? "object-contain" : "object-cover"}`}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (!item.isSlackbot && !target.src.startsWith('data:')) {
+                      target.src = generateInitialsAvatar(item.name, 32);
+                    } else if (item.isSlackbot) {
+                      target.src = "/slackbot-logo.svg";
+                    }
+                  }}
+                />
                 <StatusDot status={item.status} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1">
                   <span className="truncate font-medium text-white" style={{ fontSize: T.typography.body }}>{item.name}</span>
+                  {item.isSlackbot && (
+                    <span className="ml-2 text-[10px] bg-[#611f69] text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide shrink-0">Seller Edge</span>
+                  )}
                 </div>
                 {preview && (
                   <p className="mt-0.5 min-w-0 line-clamp-2 break-words" style={{ color: T.colors.dmMutedText }}>{preview}</p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
   IconHome,
@@ -203,12 +203,24 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-export function SlackbotMessagesTab() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
+interface SlackbotMessagesTabProps {
+  history?: ChatMessage[];
+  onUpdateHistory?: (history: ChatMessage[]) => void;
+  onSendMessage?: (sendFn: (message: string) => void) => void;
+}
+
+export function SlackbotMessagesTab({ history = [], onUpdateHistory, onSendMessage }: SlackbotMessagesTabProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>(history);
   const [isTyping, setIsTyping] = useState(false);
 
-  const sendMessage = (text: string) => {
+  // Sync local messages with history prop when it changes externally
+  useEffect(() => {
+    if (history.length > 0 && history.length !== messages.length) {
+      setMessages(history);
+    }
+  }, [history, messages.length]);
+
+  const sendMessage = useCallback((text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
 
@@ -218,8 +230,13 @@ export function SlackbotMessagesTab() {
       content: trimmed,
       timestamp: new Date(),
     };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
+    
+    setMessages((prev) => {
+      const newMessages = [...prev, userMsg];
+      onUpdateHistory?.(newMessages);
+      return newMessages;
+    });
+    
     setIsTyping(true);
 
     setTimeout(() => {
@@ -230,15 +247,22 @@ export function SlackbotMessagesTab() {
         blocks,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, botMsg]);
-      setIsTyping(false);
+      setMessages((prevMsgs) => {
+        const finalMessages = [...prevMsgs, botMsg];
+        onUpdateHistory?.(finalMessages);
+        setIsTyping(false);
+        return finalMessages;
+      });
     }, 600);
-  };
+  }, [onUpdateHistory]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sendMessage(input);
-  };
+  // Expose sendMessage to parent via callback
+  useEffect(() => {
+    if (onSendMessage) {
+      // Pass sendMessage function to parent
+      onSendMessage(sendMessage);
+    }
+  }, [onSendMessage, sendMessage]);
 
   return (
     <div className="flex flex-col h-full">
@@ -300,15 +324,7 @@ export function SlackbotMessagesTab() {
           </div>
         )}
       </div>
-
-      <div className="shrink-0 px-3 py-2">
-        <MessageInput
-          placeholder="Reply..."
-          onSubmit={sendMessage}
-          value={input}
-          onChange={setInput}
-        />
-      </div>
+      {/* REMOVED: Duplicate MessageInput - using SSOT input from SlackbotPanel instead */}
     </div>
   );
 }

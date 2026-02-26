@@ -145,7 +145,6 @@ export function Arc1SlackThread({
   onMessageSend,
 }: Arc1SlackThreadProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [inputValue, setInputValue] = useState("");
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -154,8 +153,7 @@ export function Arc1SlackThread({
 
   const handleSubmit = (message: string) => {
     // Don't send messages to main chat - all interactions stay in panel
-    // Just clear the input
-    setInputValue("");
+    // Input clears automatically via MessageInput's internal state
   };
 
   // Check if welcome message exists (for dashboard rendering) - memoized to prevent recalculation
@@ -296,9 +294,7 @@ export function Arc1SlackThread({
         <div className="p-3">
           <MessageInput
             placeholder="Message Slackbot..."
-            onSubmit={handleSubmit}
-            value={inputValue}
-            onChange={setInputValue}
+            onSendMessage={handleSubmit}
           />
         </div>
       </div>

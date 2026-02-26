@@ -15,6 +15,7 @@ import { SlackbotPanel } from "@/components/slackbot/SlackbotPanel";
 import {
   DemoLayoutProviders,
   type NavView,
+  type DemoContext,
 } from "./_context/demo-layout-context";
 
 const T = SLACK_TOKENS;
@@ -40,6 +41,9 @@ export default function DemoWorkspaceLayout({
   const navFromPath = useMemo(() => getNavFromPathname(pathname), [pathname]);
   const [isSlackbotOpen, setIsSlackbotOpen] = useState(true);
   const [activeNav, setActiveNav] = useState<NavView>(() => navFromPath);
+  const [demoContext, setDemoContext] = useState<DemoContext>('N2A1'); // Default to Narrative 2 Arc 1
+  const [slackbotPanelData, setSlackbotPanelData] = useState<any>(null);
+  const [globalSlackbotHistory, setGlobalSlackbotHistory] = useState<any[]>([]);
 
   useLayoutEffect(() => {
     setActiveNav(navFromPath);
@@ -51,6 +55,8 @@ export default function DemoWorkspaceLayout({
         setIsSlackbotOpen={setIsSlackbotOpen}
         activeNav={activeNav}
         setActiveNav={setActiveNav}
+        demoContext={demoContext}
+        setDemoContext={setDemoContext}
     >
       {/* Single canonical slot: below global header, same height as prototype zone so layout is identical on first frame and after navigation */}
       <div
@@ -103,7 +109,13 @@ export default function DemoWorkspaceLayout({
                       boxShadow: "-6px 0 24px -4px rgba(0, 0, 0, 0.18), -2px 0 10px -2px rgba(0, 0, 0, 0.12)",
                     }}
                   >
-                    <SlackbotPanel onClose={() => setIsSlackbotOpen(false)} />
+                    <SlackbotPanel 
+                      onClose={() => setIsSlackbotOpen(false)}
+                      panelData={slackbotPanelData}
+                      history={globalSlackbotHistory}
+                      onUpdateHistory={setGlobalSlackbotHistory}
+                      demoContext={demoContext}
+                    />
                   </div>
                 </ResizablePanel>
               </>

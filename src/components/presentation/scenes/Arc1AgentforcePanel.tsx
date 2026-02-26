@@ -5,7 +5,7 @@ import { SLACK_TOKENS } from "@/design/slack-tokens";
 import Image from "next/image";
 import { IconStar, IconPencil, IconMoreVertical, IconX, IconChevronDown, IconSearch, IconFilter, IconMessage, IconLightbulb, IconUsers } from "@/components/icons";
 import { MessageInput } from "@/components/shared/MessageInput";
-import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +49,10 @@ interface ToolIconProps {
 }
 
 const ToolIcon = memo(function ToolIcon({ name, size = "md", showInStack = false }: ToolIconProps) {
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+  const [imageError, setImageError] = React.useState(false);
+  const imgRef = React.useRef<HTMLImageElement | null>(null);
+  
   // Strict mapping: tool names to exact PNG filenames (handling spaces with encodeURI)
   const toolMap: Record<string, string> = {
     "Salesforce": "/Salesforce.png",
@@ -63,28 +67,109 @@ const ToolIcon = memo(function ToolIcon({ name, size = "md", showInStack = false
   };
 
   const iconPath = toolMap[name] || null;
-  // Use encodeURI to handle spaces in filenames (e.g., "Google Calendar.png")
-  const encodedPath = iconPath ? encodeURI(iconPath) : null;
+  // Keep original path - Next.js handles spaces in public folder paths
+  const encodedPath = iconPath;
   const sizeClasses = size === "sm" ? "w-4 h-4" : "w-6 h-6";
   const pixelSize = size === "sm" ? 16 : 24;
 
+  // Generate fallback with initials
+  const getInitials = (toolName: string): string => {
+    return toolName
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const handleImageError = React.useCallback((e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.preventDefault();
+    setImageError(true);
+    setImageLoaded(false);
+  }, []);
+
+  const handleImageLoad = React.useCallback(() => {
+    setImageLoaded(true);
+    setImageError(false);
+  }, []);
+
+  // Preload image on mount
+  React.useEffect(() => {
+    if (!encodedPath) {
+      setImageError(true);
+      return;
+    }
+
+    // Create a new image to test loading - use window.Image to avoid conflict with Next.js Image import
+    const testImg = new window.Image();
+    testImg.onload = () => {
+      setImageLoaded(true);
+      setImageError(false);
+    };
+    testImg.onerror = () => {
+      setImageError(true);
+      setImageLoaded(false);
+    };
+    testImg.src = encodedPath;
+
+    return () => {
+      testImg.onload = null;
+      testImg.onerror = null;
+    };
+  }, [encodedPath]);
+
+  const showFallback = !encodedPath || imageError || !imageLoaded;
+  const shouldShowImage = encodedPath && imageLoaded && !imageError;
+
   return (
-    <div className={`group relative cursor-pointer ${showInStack ? 'relative' : 'inline-flex items-center justify-center'}`}>
-      {encodedPath ? (
-        <Image
+    <div className={`group relative cursor-pointer ${showInStack ? 'relative' : 'inline-flex items-center justify-center'}`} style={{ position: 'relative' }}>
+      {/* Fallback: colored circle with initials - shown by default */}
+      <div
+        className={`${sizeClasses} rounded-full shrink-0 flex items-center justify-center text-white text-[10px] font-bold ${showInStack ? 'border-2 border-white relative' : ''}`}
+        style={{ 
+          backgroundColor: '#611f69',
+          fontSize: size === "sm" ? '8px' : '10px',
+          display: showFallback ? 'flex' : 'none'
+        }}
+        title={name}
+        aria-label={name}
+      >
+        {getInitials(name)}
+      </div>
+      {/* Invisible img for error detection - prevents broken icon display */}
+      {shouldShowImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          ref={imgRef}
           src={encodedPath}
-          alt={name}
-          width={pixelSize}
-          height={pixelSize}
-          className={`${sizeClasses} shrink-0 object-contain ${showInStack ? 'rounded-full border-2 border-white bg-white relative' : ''}`}
-          style={{ verticalAlign: 'middle' }}
+          alt=""
+          style={{ 
+            position: 'absolute',
+            width: 0,
+            height: 0,
+            opacity: 0,
+            visibility: 'hidden',
+            pointerEvents: 'none',
+            zIndex: -1
+          }}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
         />
-      ) : (
-        // Fallback: generic gray circle
+      )}
+      {/* Use background-image div instead of img to avoid broken image icons */}
+      {shouldShowImage && (
         <div
-          className={`${sizeClasses} rounded-full bg-gray-300 shrink-0 flex items-center justify-center ${showInStack ? 'border-2 border-white relative' : ''}`}
+          className={`${sizeClasses} shrink-0 ${showInStack ? 'rounded-full border-2 border-white bg-white relative' : ''}`}
+          style={{ 
+            backgroundImage: `url(${encodedPath})`,
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            position: 'relative'
+          }}
           title={name}
           aria-label={name}
+          role="img"
         />
       )}
       {/* Tooltip with bottom nubbin */}
