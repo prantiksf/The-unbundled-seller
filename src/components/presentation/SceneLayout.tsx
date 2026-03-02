@@ -4,10 +4,10 @@ import { useEffect, useState, useLayoutEffect } from "react";
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { SceneData, SCENES } from "@/lib/presentation-data";
-import { DesktopSlackShell } from "./DesktopSlackShell";
+import { SlackAppShellWrapper } from "./SlackAppShellWrapper";
 import { Scene1 } from "./scenes/Scene1";
 import { Scene2 } from "./scenes/Scene2";
-import { QuotaTracker, resetQuotaTrackerMemory } from "./QuotaTracker";
+import { resetQuotaTrackerMemory } from "./QuotaTracker";
 import { resetAnimatedCounterMemory } from "./AnimatedCounter";
 import { resetPulseDataCardMemory } from "./scenes/PulseDataCard";
 import { resetDealVelocityCardMemory } from "./scenes/DealVelocityCard";
@@ -19,6 +19,7 @@ import { usePresentationScene } from "@/context/PresentationSceneContext";
 import { useArcNavigation } from "@/context/ArcNavigationContext";
 import { useScenarioVisibility } from "@/context/ScenarioVisibilityContext";
 import { ExecReadyLayout } from "./ExecReadyLayout";
+import { getMetadataForScene, getNarrativeArcFromSceneId } from "@/config/demoMetadata";
 
 interface SceneLayoutProps {
   scene: SceneData;
@@ -39,8 +40,8 @@ const SCENE_TO_ARC: Record<number, number> = {
   8: 8,
   9: 9,
   10: 10,
-  11: 1, // New scenarios: Mobile Pulse and Watch Win map to Arc 1
-  12: 1,
+  11: 11, // Mobile Pulse maps to Arc 11
+  12: 12, // Watch Win maps to Arc 12
   13: 10, // Multiple scenes can map to same arc
 };
 
@@ -62,6 +63,8 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
   const [showProto, setShowProto] = useState(false);
   const [protoMountReady, setProtoMountReady] = useState(false);
   const [contentOpacity, setContentOpacity] = useState(1);
+  const [imageSrc, setImageSrc] = useState<string>('');
+  const [imageKey, setImageKey] = useState<string>('');
   const { isPrototypeMode, setIsPrototypeMode } = usePrototypeMode();
   const {
     activeScenarios,
@@ -173,18 +176,18 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
   }, [scene.id]); // Reset whenever Scene 1 becomes active
 
   // Component registry (supports historical version keys).
-  const PROTOTYPE_COMPONENT_MAP: Record<string, React.ComponentType> = {
+  const PROTOTYPE_COMPONENT_MAP: Record<string, React.ComponentType<any>> = {
     "Scene1": Scene1,
     "Scene2": Scene2,
-    "DesktopSlackShell": DesktopSlackShell,
+    "DesktopSlackShell": SlackAppShellWrapper,
     "SlackMyDay_V1": Scene1,
     "SlackMyDay_V2": Scene1,
     "WatchWin_V1": Scene2,
     "WatchWin_V2": Scene2,
-    "AutoClose_V1": DesktopSlackShell,
-    "AutoClose_V2": DesktopSlackShell,
-    "DesktopRecovery_V1": DesktopSlackShell,
-    "DesktopRecovery_V2": DesktopSlackShell,
+    "AutoClose_V1": SlackAppShellWrapper,
+    "AutoClose_V2": SlackAppShellWrapper,
+    "DesktopRecovery_V1": SlackAppShellWrapper,
+    "DesktopRecovery_V2": SlackAppShellWrapper,
   } as const;
 
   const hasPrototypeFromConfig = Boolean(
@@ -194,8 +197,29 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
 
   const renderComponentByKey = (componentKey: string) => {
     const Component = PROTOTYPE_COMPONENT_MAP[componentKey];
+    
+    // Get metadata for this scene to inject arc-specific payload
+    const { arc: activeArcMeta } = getMetadataForScene(scene.id);
+    
     if (Component) {
+      // Narrative 2 routing: sceneId 201 (N2A1) uses SlackAppShellWrapper with onboarding, sceneId 202 uses legacy SlackConceptArc1
       if (componentKey.includes("Scene1") || componentKey === "SlackMyDay_V1" || componentKey === "SlackMyDay_V2") {
+        // SceneId 201 = NEW N2A1 (uses SlackAppShellWrapper with onboarding payload)
+        if (scene.id === 201) {
+          // NEW Arc 1: Use SlackAppShellWrapper with onboarding payload
+          const payload = activeArcMeta?.payload || { defaultNavId: 'today' as const, sidebarDms: [] };
+          return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={payload} />;
+        } else if (scene.id === 202) {
+          // RESTORED LEGACY STORY: Now living in Arc 2 (Scene 202)
+          // Render Scene1 which wraps SlackConceptArc1
+          return <Scene1 onNext={() => {}} skipNarrative={true} />;
+        } else if (scene.id >= 203 && scene.id <= 206) {
+          // N2A3-N2A6: Use generic SlackAppShellWrapper with arc payload
+          // Ensure we always have a valid payload, fallback to default if metadata lookup fails
+          const payload = activeArcMeta?.payload || { defaultNavId: 'today' as const, sidebarDms: [] };
+          return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={payload} />;
+        }
+        // Fallback for other Scene1 scenarios (e.g., sceneId 1) - use old Scene1 component
         return <Scene1 onNext={() => {}} skipNarrative={true} />;
       }
       if (componentKey.includes("Scene2") || componentKey === "WatchWin_V1" || componentKey === "WatchWin_V2") {
@@ -208,7 +232,8 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
         componentKey === "DesktopRecovery_V1" ||
         componentKey === "DesktopRecovery_V2"
       ) {
-        return <DesktopSlackShell defaultNav="dms" defaultChannelId="slackbot" hideHeader={false} />;
+        // Use generic SlackAppShellWrapper with arc payload
+        return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={activeArcMeta?.payload} />;
       }
       return <Component />;
     }
@@ -226,13 +251,16 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
     }
 
     // Fallback: Legacy mapping by scene ID for scenes without prototypeComponent
-    const LEGACY_PROTOTYPE_MAP: Record<number, React.ComponentType> = {
+    const LEGACY_PROTOTYPE_MAP: Record<number, React.ComponentType<any>> = {
       1: Scene1,
-      2: DesktopSlackShell,
+      2: SlackAppShellWrapper,
       3: Scene2,
       4: Scene2,
-      6: DesktopSlackShell,
+      6: SlackAppShellWrapper,
     } as const;
+    
+    // Get metadata for this scene to inject arc-specific payload
+    const { arc: activeArcMeta } = getMetadataForScene(scene.id);
     
     const LegacyComponent = LEGACY_PROTOTYPE_MAP[scene.id];
     if (LegacyComponent) {
@@ -240,7 +268,7 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
         return <Scene1 onNext={() => {}} skipNarrative={true} />;
       }
       if ([2, 6].includes(scene.id)) {
-        return <DesktopSlackShell defaultNav="dms" defaultChannelId="slackbot" hideHeader={false} />;
+        return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={activeArcMeta?.payload} />;
       }
       if ([3, 4].includes(scene.id)) {
         return <Scene2 onNext={() => {}} sceneId={scene.id} />;
@@ -259,6 +287,57 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
     );
   };
 
+  // Get metadata for presentation overrides and dynamic image path
+  const { narrative: activeNarrativeMeta, arc: activeArcMeta } = getMetadataForScene(scene.id);
+  const overrides = activeArcMeta?.payload?.presentationOverrides;
+  const arcPayload = activeArcMeta?.payload;
+  
+  // Compute dynamic cover image path: e.g., /N1A1.png, /N2A1.png (directly in public folder)
+  // Use direct scene ID mapping as primary source for image path (more reliable)
+  // Compute values for current scene (always use current scene.id, not stale state)
+  const narrativeArc = getNarrativeArcFromSceneId(scene.id);
+  const nValue = narrativeArc?.narrative || '1';
+  const aValue = narrativeArc?.arc || '1';
+  
+  // Initialize and update image src when scene changes
+  useEffect(() => {
+    const narrativeArc = getNarrativeArcFromSceneId(scene.id);
+    if (!narrativeArc) {
+      console.error(`[SceneLayout] No mapping found for scene ID: ${scene.id}`);
+      return;
+    }
+    
+    const nValue = narrativeArc.narrative;
+    const aValue = narrativeArc.arc;
+    
+    // Add cache-busting query parameter to ensure images reload when scene changes
+    const timestamp = Date.now();
+    const newImagePath = `/N${nValue}A${aValue}.png?scene=${scene.id}&t=${timestamp}`;
+    const newImageKey = `img-${scene.id}-${nValue}-${aValue}-${timestamp}`;
+    
+    
+    
+    setImageSrc(newImagePath);
+    setImageKey(newImageKey);
+  }, [scene.id]);
+  
+  // CRITICAL FIX: Always compute currentImageSrc from current scene.id, not stale imageSrc state
+  // Check if imageSrc matches current scene, if not use computed path immediately
+  const expectedPath = `/N${nValue}A${aValue}.png`;
+  const imageSrcMatchesScene = imageSrc && imageSrc.includes(`N${nValue}A${aValue}.png`);
+  const timestamp = Date.now();
+  const currentImageSrc = imageSrcMatchesScene ? imageSrc : `${expectedPath}?scene=${scene.id}&t=${timestamp}`;
+  const imgSrc = currentImageSrc;
+  
+  // CRITICAL FIX: Also update imageKey immediately when scene doesn't match, not just in useEffect
+  // This forces React to remount the <img> element, preventing browser caching
+  const currentImageKey = imageSrcMatchesScene ? imageKey : `img-${scene.id}-${nValue}-${aValue}-${timestamp}`;
+  
+  
+  
+  // Compute fallback path: For N2 arcs 2-6, fallback to N2A1 if image doesn't exist
+  const fallbackImagePath = (nValue === '2' && aValue !== '1') ? `/N2A1.png?scene=${scene.id}&t=${Date.now()}` : null;
+
   // Conditional rendering: Exec Ready density uses dark, metrics-focused layout
   if (presentationDensity === "exec-ready") {
     return <ExecReadyLayout scene={scene} onBack={onBack} onPrev={onPrev} onNext={onNext} />;
@@ -266,193 +345,152 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
 
   return (
     <div className="sp fixed z-[200] overflow-hidden" style={{ background: "var(--bg)", animation: showProto ? undefined : "pageIn 0.4s ease both", top: "var(--header-height, 40px)", left: 0, right: 0, width: "100vw", minWidth: "100%", height: "calc(100vh - var(--header-height, 40px))", pointerEvents: showProto ? 'none' : 'auto' }}>
-      {/* Split layout - overlapping editorial feel */}
       {!showProto && (
-        <div className="relative w-full h-full bg-[#E5EEFB] flex overflow-hidden gap-0 min-w-0" style={{ width: '100%', minWidth: '100%', zIndex: 1 }}>
-          {/* Left image - fill container, no black bars */}
-          <div className="w-[65%] h-full relative shrink-0 [mask-image:linear-gradient(to_right,white_80%,transparent_100%)]" style={{ minWidth: '65%' }}>
-            <img
-              key={scene.image}
-              src={scene.image ? scene.image.replace(/ /g, '%20') : '/New%20Scene_01.png'}
-              alt={`Scene ${scene.id}`}
-              className="w-full h-full object-cover object-center opacity-0"
-              style={{ 
-                objectFit: 'cover',
-                objectPosition: 'center',
-                animation: 'imageFadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards'
-              }}
+        <div className="relative w-full h-screen overflow-hidden bg-[#F4F7FA] font-sans text-gray-900">
+          {/* 1. CINEMATIC BACKGROUND IMAGE */}
+          <div className="absolute top-0 left-0 w-full md:w-[70%] h-full z-0">
+            <img 
+              key={currentImageKey}
+              src={imgSrc} 
+              alt={activeArcMeta?.title || "Arc Cover"}
+              className="w-full h-full object-cover object-[center_20%]"
               onError={(e) => {
-                console.error('Image failed to load:', scene.image);
-                (e.target as HTMLImageElement).style.display = "none";
-                (e.target as HTMLImageElement).parentElement!.style.background = "#E5EEFB";
+                (e.target as HTMLImageElement).src = "/images/covers/default-cover.png";
               }}
+            />
+            {/* REFINED FADE: Pushed the transparency to 60% so more of the image is completely visible, with a sharper fade at the edge */}
+            <div 
+              className="absolute inset-0" 
+              style={{ background: "linear-gradient(to right, transparent 0%, transparent 60%, rgba(244,247,250, 0.9) 85%, #F4F7FA 100%)" }} 
             />
           </div>
 
-          {/* Right content - overlapping panel */}
-          <div className="flex-1 h-full bg-transparent relative z-10 -ml-32 flex items-center justify-center min-w-0" style={{ minWidth: 0, flexGrow: 1 }}>
-            {/* Fixed-width, centered inner container */}
-            <div key={scene.id} className="w-full max-w-[940px] px-16 flex flex-col min-w-0" style={{ width: '100%' }}>
-              {/* 1. Animated Header Block */}
-              <div className="h-[180px] shrink-0 flex flex-col justify-end pb-0">
-                <div key={`header-${scene.id}`} className="animate-reveal opacity-0" style={{ animationDelay: '100ms' }}>
-                  <div className="s-scene-tag font-mono text-[9px] tracking-[0.15em] uppercase mb-2" style={{ color: "#181818" }}>{scene.sceneTag || ""}</div>
-                  <h1 className="s-title text-[clamp(32px,3.5vw,50px)] leading-[1.05] tracking-[-0.02em]" style={{ color: "#181818", fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif", fontWeight: 700 }}>
-                    "{scene.jtbd}"
-                  </h1>
-                  {scene.subtitle && (
-                    <p className="s-subtitle text-lg max-w-xl" style={{ color: "#181818" }}>
-                      {scene.subtitle}
-                    </p>
-                  )}
+          {/* 2. FOREGROUND CONTENT AREA */}
+          <div className="relative z-10 w-full h-full flex justify-end">
+            <div className="w-[55%] max-w-4xl h-full flex flex-col justify-center pl-10 pr-24 py-16 overflow-y-auto">
+              
+              {/* HEADER */}
+              <div className="mb-10">
+                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
+                  ARC {activeArcMeta?.value || "1"} • DESKTOP
                 </div>
+                <h1 className="text-[56px] font-extrabold tracking-tight text-gray-900 mb-4 leading-tight">
+                  {activeArcMeta?.title || "Arc Title"}
+                </h1>
+                <p className="text-[18px] text-gray-700 leading-relaxed max-w-xl">
+                  {activeArcMeta?.description || "Arc description goes here."}
+                </p>
               </div>
 
-              {/* 2. Quota Tracker */}
-              {scene.pipeline && (
-                <div className="mt-2 mb-8">
-                  <QuotaTracker pipeline={scene.pipeline} isFirstScene={scene.id === 1} />
+              {/* THE QUOTA SLIDER (Only shows for N1) */}
+              {!arcPayload?.presentationOverrides?.hideQuotaSlider && (
+                <div className="mb-10 max-w-2xl">
+                  <div className="flex justify-between items-end mb-2">
+                    <span className="text-[11px] font-bold text-gray-900 uppercase tracking-widest">QUOTA IMPACT</span>
+                    <div className="text-right">
+                      <span className="text-4xl font-black block leading-none">0%</span>
+                      <span className="text-[13px] text-gray-500">$0 / $500,000</span>
+                    </div>
+                  </div>
+                  <div className="h-2 w-full bg-gray-200 rounded-full mb-3 flex overflow-hidden">
+                     <div className="h-full bg-[#2BAC76] w-[15%]"></div>
+                     <div className="h-full border-l border-white bg-blue-500 w-[5%]"></div>
+                  </div>
+                  <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
+                    <span className="text-[#2BAC76]">● CLOSED</span>
+                    <span className="text-blue-500">● IN PROGRESS</span>
+                    <span className="text-gray-400">● NOT STARTED</span>
+                    <span className="text-red-500">● LOST</span>
+                  </div>
                 </div>
               )}
 
-              {/* 3. Animated Body Block */}
-              <div>
-                {/* Symmetrical Story Grid (Anchor 2) */}
-                {scene.bundled && scene.unbundled && (
-                  <div key={`story-${scene.id}`} className="animate-reveal opacity-0 grid grid-cols-2 gap-x-16 h-[160px] shrink-0 items-start" style={{ animationDelay: '300ms' }}>
-                    {/* LEFT COLUMN: OLD WORLD */}
-                    <div className="flex flex-col w-full">
-                      <div className="space-y-3">
-                        <h4 className="text-[10px] uppercase tracking-widest flex items-center gap-2" style={{ color: "#ef4444", fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif", fontWeight: 700 }}>
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#ef4444" }}></span>Old World
-                        </h4>
-                        <p className="text-[15px] leading-relaxed" style={{ color: "#181818" }}>
-                          {scene.bundled.text}
-                        </p>
-                      </div>
-                    </div>
+              {/* STORY TEXT (N2 Stacked vs N1 Side-by-Side) */}
+              {arcPayload?.presentationOverrides?.layoutStyle === "breakthrough" ? (
+                /* N2: Friction vs Breakthrough Layout */
+                <div className="flex flex-col gap-4 mb-10 max-w-2xl">
+                   <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                     <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{arcPayload.presentationOverrides.oldWorldTitle || "🔴 THE FRICTION"}</h3>
+                     <p className="text-[14px] text-gray-800 leading-relaxed">{arcPayload.presentationOverrides.oldWorldText}</p>
+                   </div>
+                   <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-100 shadow-sm">
+                     <h3 className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-2">{arcPayload.presentationOverrides.newWorldTitle || "🔵 THE BREAKTHROUGH"}</h3>
+                     <p className="text-[14px] text-gray-800 leading-relaxed">{arcPayload.presentationOverrides.newWorldText}</p>
+                   </div>
+                </div>
+              ) : (
+                /* N1: Original Side-by-Side Layout */
+                <div className="grid grid-cols-2 gap-10 mb-10 pt-6 border-t border-gray-200/60 max-w-3xl">
+                  <div>
+                    <h3 className="text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-3">🔴 OLD WORLD</h3>
+                    <p className="text-[14px] text-gray-800 leading-relaxed">
+                      Rita logs into Salesforce, opens a forecast spreadsheet, tabs between Clari, her manager's template, and last quarter's actuals. 3.2 hours of political alignment before she submits a number she doesn't fully believe in.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-3">🔵 WITH INTELLIGENCE</h3>
+                    <p className="text-[14px] text-gray-800 leading-relaxed">
+                      Slack opens. @slackbot has modelled three scenarios overnight. Rita drags a slider. The machine's workload grows. Her hours stay flat. She approves $600K in 4 minutes and believes it for the first time.
+                    </p>
+                  </div>
+                </div>
+              )}
 
-                    {/* RIGHT COLUMN: WITH INTELLIGENCE */}
-                    <div className="flex flex-col w-full">
-                      <div className="space-y-3">
-                        <h4 className="text-[10px] uppercase tracking-widest flex items-center gap-2" style={{ color: "#0059FF", fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif", fontWeight: 700 }}>
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#0059FF" }}></span>With Intelligence
-                        </h4>
-                        <p className="text-[15px] leading-relaxed" style={{ color: "#181818" }}>
-                          {scene.unbundled.text}
-                        </p>
-                      </div>
+              {/* METRICS GRID */}
+              <div className="mb-10 pt-6 border-t border-gray-200/60 max-w-3xl">
+                {arcPayload?.presentationOverrides?.heroMetric ? (
+                  /* N2 Exec Ready Metric */
+                  <div className="mt-2">
+                    <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">
+                      {arcPayload.presentationOverrides.heroMetric.label}
+                    </h3>
+                    <div className="flex items-center gap-6 text-[64px] font-black tracking-tighter">
+                      <span className="text-gray-400 line-through decoration-red-400/60 decoration-4">
+                        {arcPayload.presentationOverrides.heroMetric.old}
+                      </span>
+                      <span className="text-gray-300 text-5xl font-light pb-2">→</span>
+                      <span className="text-[#0055FF]">
+                        {arcPayload.presentationOverrides.heroMetric.new}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  /* N1 Original 2x2 Grid */
+                  <div className="grid grid-cols-2 gap-y-10 gap-x-10 mt-2">
+                    <div>
+                      <h2 className="text-[52px] font-black text-[#FF4545] leading-none mb-2">{arcPayload?.presentationOverrides?.metricsGrid?.topLeft?.value || "3.2 hrs"}</h2>
+                      <p className="text-[11px] font-bold tracking-widest text-gray-700 uppercase">{arcPayload?.presentationOverrides?.metricsGrid?.topLeft?.label || "LOST TO QUARTERLY PLANNING"}</p>
+                    </div>
+                    <div>
+                      <h2 className="text-[52px] font-black text-[#0055FF] leading-none mb-2">{arcPayload?.presentationOverrides?.metricsGrid?.topRight?.value || "4 min"}</h2>
+                      <p className="text-[11px] font-bold tracking-widest text-gray-700 uppercase">{arcPayload?.presentationOverrides?.metricsGrid?.topRight?.label || "TO APPROVE WITH INTELLIGENCE"}</p>
+                    </div>
+                    <div>
+                      <h2 className="text-[52px] font-black text-[#FF4545] leading-none mb-2">{arcPayload?.presentationOverrides?.metricsGrid?.bottomLeft?.value || "67%"}</h2>
+                      <p className="text-[11px] font-bold tracking-widest text-gray-700 uppercase">{arcPayload?.presentationOverrides?.metricsGrid?.bottomLeft?.label || "OF AES SANDBAG THEIR COMMIT"}</p>
+                    </div>
+                    <div>
+                      <h2 className="text-[52px] font-black text-[#0055FF] leading-none mb-2">{arcPayload?.presentationOverrides?.metricsGrid?.bottomRight?.value || "$600K"}</h2>
+                      <p className="text-[11px] font-bold tracking-widest text-gray-700 uppercase">{arcPayload?.presentationOverrides?.metricsGrid?.bottomRight?.label || "RITA'S PLAN — BELIEVED"}</p>
                     </div>
                   </div>
                 )}
+              </div>
 
-                {/* Symmetrical Metrics Grid (Anchor 3) */}
-                {scene.metrics && scene.metrics.length > 0 && (
-                  <div key={`metrics-${scene.id}`} className="animate-subtle opacity-0 grid grid-cols-2 gap-x-16 h-[200px] shrink-0 mt-8 border-t pt-8" style={{ animationDelay: '200ms', borderColor: 'rgba(0, 89, 255, 0.2)' }}>
-                    {/* LEFT COLUMN: Metrics */}
-                    <div className="flex flex-col gap-6">
-                      {scene.metrics.filter(m => m.cls === 'fric-v').map((m, i) => (
-                        <div key={i} className="flex flex-col">
-                          <span className="text-5xl whitespace-nowrap leading-none" style={{ color: "#ef4444", fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif", fontWeight: 700 }}>{m.val}</span>
-                          <span className="text-[10px] uppercase tracking-widest mt-2" style={{ color: "#181818" }}>{m.lbl}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* RIGHT COLUMN: Metrics */}
-                    <div className="flex flex-col gap-6">
-                      {scene.metrics.filter(m => m.cls !== 'fric-v').map((m, i) => (
-                        <div key={i} className="flex flex-col">
-                          <span className="text-5xl whitespace-nowrap leading-none" style={{ color: "#0059FF", fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif", fontWeight: 700 }}>{m.val}</span>
-                          <span className="text-[10px] uppercase tracking-widest mt-2" style={{ color: "#181818" }}>{m.lbl}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Persistent Footer (Anchor 4) */}
-                <div key={`footer-${scene.id}`} className="animate-reveal opacity-0 h-[80px] shrink-0 flex items-center justify-between border-t mt-4" style={{ animationDelay: '500ms', borderColor: 'rgba(0, 89, 255, 0.2)' }}>
-                {/* Left: Enter Prototype Button */}
-                <div className="flex-shrink-0">
-                  {hasPrototypeFromConfig || hasPrototypeFromLegacy ? (
-                    <button className="btn-proto inline-flex items-center gap-[9px] rounded-xl px-5 py-[13px] font-sans text-[12.5px] font-semibold cursor-pointer tracking-[0.01em] transition-all duration-[0.18s] ease whitespace-nowrap" style={{ background: "#0059FF", color: "#FFFFFF", borderRadius: "8px" }} onClick={() => {
-                      setShowProto(true);
-                      setIsPrototypeMode(true);
-                    }} onMouseEnter={(e) => { e.currentTarget.style.background = "#0066FF"; e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 24px rgba(0, 89, 255, 0.4)"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "#0059FF"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
-                      Enter Prototype <span className="btn-arr text-[15px] transition-transform duration-[0.18s]" style={{ transform: "translateX(0)" }}>→</span>
-                    </button>
-                  ) : (
-                    <button className="btn-proto off inline-flex items-center gap-[9px] rounded-xl px-5 py-[13px] font-sans text-[12.5px] font-semibold cursor-default tracking-[0.01em] whitespace-nowrap" style={{ background: "#E5EEFB", color: "#181818", border: "1px solid rgba(0, 89, 255, 0.3)", borderRadius: "8px" }} disabled>
-                      Prototype Coming <span className="btn-arr text-[15px]">→</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Center: Navigation Controls */}
-                <div className="flex items-center gap-4 flex-shrink-0">
-                  {/* Previous Button */}
-                  {onPrev ? (
-                    <button
-                      onClick={onPrev}
-                      className="inline-flex items-center justify-center w-10 h-10 rounded-full border transition-colors duration-200"
-                      style={{ borderColor: 'rgba(0, 89, 255, 0.3)', backgroundColor: 'rgba(0, 89, 255, 0.1)', color: '#0059FF' }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(0, 89, 255, 0.2)';
-                        e.currentTarget.style.borderColor = '#0059FF';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(0, 89, 255, 0.1)';
-                        e.currentTarget.style.borderColor = 'rgba(0, 89, 255, 0.3)';
-                      }}
-                      aria-label="Previous scene"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 12H5M12 19l-7-7 7-7"/>
-                      </svg>
-                    </button>
-                  ) : (
-                    <div className="w-10 h-10" /> // Spacer when no previous
-                  )}
-
-                  {/* Scene Counter - Uses activeScenarios for dynamic numbering */}
-                  {(() => {
-                    const currentScenario = getScenarioBySceneId(scene.id);
-                    const currentIndex = currentScenario ? activeScenarios.findIndex(s => s.id === currentScenario.id) : -1;
-                    const displayNumber = currentIndex >= 0 ? currentIndex + 1 : scene.id;
-                    return (
-                      <div className="cta-meta font-mono text-[8.5px] tracking-[0.1em] uppercase whitespace-nowrap" style={{ color: "#0059FF" }}>
-                        Scene {displayNumber} / {activeScenarios.length}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Next Button */}
-                  {onNext ? (
-                    <button
-                      onClick={onNext}
-                      className="inline-flex items-center justify-center w-10 h-10 rounded-full border transition-colors duration-200"
-                      style={{ borderColor: 'rgba(0, 89, 255, 0.3)', backgroundColor: 'rgba(0, 89, 255, 0.1)', color: '#0059FF' }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(0, 89, 255, 0.2)';
-                        e.currentTarget.style.borderColor = '#0059FF';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(0, 89, 255, 0.1)';
-                        e.currentTarget.style.borderColor = 'rgba(0, 89, 255, 0.3)';
-                      }}
-                      aria-label="Next scene"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
-                      </svg>
-                    </button>
-                  ) : (
-                    <div className="w-10 h-10" /> // Spacer when no next
-                  )}
+              {/* FOOTER ACTION */}
+              <div className="mt-auto flex items-center justify-between max-w-3xl">
+                <button 
+                  onClick={onNext}
+                  className="px-8 py-3.5 bg-[#0055FF] text-white rounded-lg text-[14px] font-bold shadow-md hover:bg-blue-700 transition-all flex items-center gap-3"
+                >
+                  Enter Prototype <span className="text-xl leading-none font-normal pb-0.5">→</span>
+                </button>
+                <div className="flex items-center gap-4 text-blue-500">
+                   <span className="text-[10px] font-bold tracking-widest uppercase">SCENE 1 / 6</span>
+                   <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">→</div>
                 </div>
               </div>
-              </div>
+
             </div>
           </div>
         </div>
