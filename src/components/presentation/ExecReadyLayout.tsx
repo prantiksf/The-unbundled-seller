@@ -3,11 +3,12 @@
 import { useState, useEffect, useLayoutEffect } from "react";
 import React from "react";
 import { SceneData } from "@/lib/presentation-data";
-import { DesktopSlackShell } from "./DesktopSlackShell";
+import { SlackAppShellWrapper } from "./SlackAppShellWrapper";
 import { Scene1 } from "./scenes/Scene1";
 import { Scene2 } from "./scenes/Scene2";
 import { usePrototypeMode } from "@/context/PrototypeModeContext";
 import { useScenarioVisibility } from "@/context/ScenarioVisibilityContext";
+import { getMetadataForScene, getNarrativeArcFromSceneId } from "@/config/demoMetadata";
 
 interface ExecReadyLayoutProps {
   scene: SceneData;
@@ -17,6 +18,8 @@ interface ExecReadyLayoutProps {
 }
 
 export function ExecReadyLayout({ scene, onBack, onPrev, onNext }: ExecReadyLayoutProps) {
+  const [imageSrc, setImageSrc] = useState<string>('');
+  const [imageKey, setImageKey] = useState<string>('');
   const [showProto, setShowProto] = useState(false);
   const [protoMountReady, setProtoMountReady] = useState(false);
   const [contentOpacity, setContentOpacity] = useState(1);
@@ -66,18 +69,18 @@ export function ExecReadyLayout({ scene, onBack, onPrev, onNext }: ExecReadyLayo
   }, [showProto, setIsPrototypeMode]);
 
   // Component registry
-  const PROTOTYPE_COMPONENT_MAP: Record<string, React.ComponentType> = {
+  const PROTOTYPE_COMPONENT_MAP: Record<string, React.ComponentType<any>> = {
     "Scene1": Scene1,
     "Scene2": Scene2,
-    "DesktopSlackShell": DesktopSlackShell,
+    "DesktopSlackShell": SlackAppShellWrapper,
     "SlackMyDay_V1": Scene1,
     "SlackMyDay_V2": Scene1,
     "WatchWin_V1": Scene2,
     "WatchWin_V2": Scene2,
-    "AutoClose_V1": DesktopSlackShell,
-    "AutoClose_V2": DesktopSlackShell,
-    "DesktopRecovery_V1": DesktopSlackShell,
-    "DesktopRecovery_V2": DesktopSlackShell,
+    "AutoClose_V1": SlackAppShellWrapper,
+    "AutoClose_V2": SlackAppShellWrapper,
+    "DesktopRecovery_V1": SlackAppShellWrapper,
+    "DesktopRecovery_V2": SlackAppShellWrapper,
   } as const;
 
   const hasPrototypeFromConfig = Boolean(
@@ -87,8 +90,29 @@ export function ExecReadyLayout({ scene, onBack, onPrev, onNext }: ExecReadyLayo
 
   const renderComponentByKey = (componentKey: string) => {
     const Component = PROTOTYPE_COMPONENT_MAP[componentKey];
+    
+    // Get metadata for this scene to inject arc-specific payload
+    const { arc: activeArcMeta } = getMetadataForScene(scene.id);
+    
     if (Component) {
+      // Narrative 2 routing: sceneId 201 (N2A1) uses SlackAppShellWrapper with onboarding, sceneId 202 uses legacy SlackConceptArc1
       if (componentKey.includes("Scene1") || componentKey === "SlackMyDay_V1" || componentKey === "SlackMyDay_V2") {
+        // SceneId 201 = NEW N2A1 (uses SlackAppShellWrapper with onboarding payload)
+        if (scene.id === 201) {
+          // NEW Arc 1: Use SlackAppShellWrapper with onboarding payload
+          const payload = activeArcMeta?.payload || { defaultNavId: 'today' as const, sidebarDms: [] };
+          return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={payload} />;
+        } else if (scene.id === 202) {
+          // RESTORED LEGACY STORY: Now living in Arc 2 (Scene 202)
+          // Render Scene1 which wraps SlackConceptArc1
+          return <Scene1 onNext={() => {}} skipNarrative={true} />;
+        } else if (scene.id >= 203 && scene.id <= 206) {
+          // N2A3-N2A6: Use generic SlackAppShellWrapper with arc payload
+          // Ensure we always have a valid payload, fallback to default if metadata lookup fails
+          const payload = activeArcMeta?.payload || { defaultNavId: 'today' as const, sidebarDms: [] };
+          return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={payload} />;
+        }
+        // Fallback for other Scene1 scenarios (e.g., sceneId 1) - use old Scene1 component
         return <Scene1 onNext={() => {}} skipNarrative={true} />;
       }
       if (componentKey.includes("Scene2") || componentKey === "WatchWin_V1" || componentKey === "WatchWin_V2") {
@@ -101,7 +125,8 @@ export function ExecReadyLayout({ scene, onBack, onPrev, onNext }: ExecReadyLayo
         componentKey === "DesktopRecovery_V1" ||
         componentKey === "DesktopRecovery_V2"
       ) {
-        return <DesktopSlackShell defaultNav="dms" defaultChannelId="slackbot" hideHeader={false} />;
+        // Use generic SlackAppShellWrapper with arc payload
+        return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={activeArcMeta?.payload} />;
       }
       return <Component />;
     }
@@ -116,13 +141,16 @@ export function ExecReadyLayout({ scene, onBack, onPrev, onNext }: ExecReadyLayo
       }
     }
 
-    const LEGACY_PROTOTYPE_MAP: Record<number, React.ComponentType> = {
+    const LEGACY_PROTOTYPE_MAP: Record<number, React.ComponentType<any>> = {
       1: Scene1,
-      2: DesktopSlackShell,
+      2: SlackAppShellWrapper,
       3: Scene2,
       4: Scene2,
-      6: DesktopSlackShell,
+      6: SlackAppShellWrapper,
     } as const;
+    
+    // Get metadata for this scene to inject arc-specific payload
+    const { arc: activeArcMeta } = getMetadataForScene(scene.id);
     
     const LegacyComponent = LEGACY_PROTOTYPE_MAP[scene.id];
     if (LegacyComponent) {
@@ -130,7 +158,7 @@ export function ExecReadyLayout({ scene, onBack, onPrev, onNext }: ExecReadyLayo
         return <Scene1 onNext={() => {}} skipNarrative={true} />;
       }
       if ([2, 6].includes(scene.id)) {
-        return <DesktopSlackShell defaultNav="dms" defaultChannelId="slackbot" hideHeader={false} />;
+        return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={activeArcMeta?.payload} />;
       }
       if ([3, 4].includes(scene.id)) {
         return <Scene2 onNext={() => {}} sceneId={scene.id} />;
@@ -160,10 +188,55 @@ export function ExecReadyLayout({ scene, onBack, onPrev, onNext }: ExecReadyLayo
   // Extract device type from scenario config
   const deviceType = currentScenario?.device || 'Desktop';
   
+  // Get metadata for presentation overrides and dynamic image path
+  const { narrative: activeNarrativeMeta, arc: activeArcMeta } = getMetadataForScene(scene.id);
+  const overrides = activeArcMeta?.payload?.presentationOverrides;
+  
+  // Compute values for current scene (always use current scene.id, not stale state)
+  const narrativeArc = getNarrativeArcFromSceneId(scene.id);
+  const nValue = narrativeArc?.narrative || '1';
+  const aValue = narrativeArc?.arc || '1';
+  
+  // Initialize and update image src when scene changes
+  useEffect(() => {
+    const narrativeArc = getNarrativeArcFromSceneId(scene.id);
+    if (!narrativeArc) {
+      console.error(`[ExecReadyLayout] No mapping found for scene ID: ${scene.id}`);
+      return;
+    }
+    
+    const nValue = narrativeArc.narrative;
+    const aValue = narrativeArc.arc;
+    
+    // Add cache-busting query parameter to ensure images reload when scene changes
+    const timestamp = Date.now();
+    const newImagePath = `/N${nValue}A${aValue}.png?scene=${scene.id}&t=${timestamp}`;
+    const newImageKey = `img-${scene.id}-${nValue}-${aValue}-${timestamp}`;
+    
+    
+    
+    setImageSrc(newImagePath);
+    setImageKey(newImageKey);
+  }, [scene.id]);
+  
+  // CRITICAL FIX: Always compute currentImageSrc from current scene.id, not stale imageSrc state
+  // Check if imageSrc matches current scene, if not use computed path immediately
+  const expectedPath = `/N${nValue}A${aValue}.png`;
+  const imageSrcMatchesScene = imageSrc && imageSrc.includes(`N${nValue}A${aValue}.png`);
+  const timestamp = Date.now();
+  const currentImageSrc = imageSrcMatchesScene ? imageSrc : `${expectedPath}?scene=${scene.id}&t=${timestamp}`;
+  
+  // CRITICAL FIX: Also update imageKey immediately when scene doesn't match, not just in useEffect
+  // This forces React to remount the <img> element, preventing browser caching
+  const currentImageKey = imageSrcMatchesScene ? imageKey : `img-${scene.id}-${nValue}-${aValue}-${timestamp}`;
+  
+  // Compute fallback path: For N2 arcs 2-6, fallback to N2A1 if image doesn't exist
+  const fallbackImagePath = (nValue === '2' && aValue !== '1') ? `/N2A1.png?scene=${scene.id}&t=${Date.now()}` : null;
+  
   // Extract old vs new world metrics
   const oldWorldMetric = painMetrics[0]?.val || '3.2 hrs';
   const newWorldMetric = gainMetrics[0]?.val || '4 min';
-  
+
   // Calculate pipeline percentages for ultra-thin bar
   const pipeline = scene.pipeline;
   const totalPipeline = pipeline ? pipeline.closed + pipeline.inProgress + pipeline.notStarted + pipeline.lost : 0;
@@ -178,33 +251,29 @@ export function ExecReadyLayout({ scene, onBack, onPrev, onNext }: ExecReadyLayo
         <div className="relative w-full h-screen overflow-hidden flex items-end bg-[#0a0a0a] text-white">
           {/* 1. Full Bleed Background & Gradients */}
           <div className="absolute inset-0 z-0">
-            {scene.image ? (
-              <img
-                key={scene.image}
-                src={scene.image.replace(/ /g, '%20')}
-                alt={`Scene ${scene.id} - ${scene.name || ''}`}
-                className="w-full h-full object-cover"
-                style={{ 
-                  objectFit: 'cover',
-                  objectPosition: 'center',
-                }}
-                onError={(e) => {
-                  const img = e.target as HTMLImageElement;
-                  console.error('[ExecReadyLayout] Image failed to load:', {
-                    sceneId: scene.id,
-                    sceneName: scene.name,
-                    imagePath: scene.image,
-                    encodedPath: scene.image.replace(/ /g, '%20')
-                  });
-                  img.style.display = "none";
-                  if (img.parentElement) {
-                    img.parentElement.style.background = "#0a0a0a";
-                  }
-                }}
-              />
-            ) : (
-              <div className="w-full h-full bg-[#0a0a0a]" />
-            )}
+            <img
+              key={currentImageKey}
+              src={currentImageSrc}
+              alt={`Cover for Narrative ${nValue} Arc ${aValue}`}
+              className="w-full h-full object-cover"
+              style={{ 
+                objectFit: 'cover',
+                objectPosition: 'center',
+              }}
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                // Try fallback image if available (e.g., N2A2-N2A6 → N2A1)
+                if (fallbackImagePath && img.src !== `${window.location.origin}${fallbackImagePath}`) {
+                  img.src = fallbackImagePath;
+                  return;
+                }
+                // Hide image and show background if no fallback or fallback also failed
+                img.style.display = "none";
+                if (img.parentElement) {
+                  img.parentElement.style.background = "#0a0a0a";
+                }
+              }}
+            />
             {/* Bottom gradient (darkest at bottom for text legibility) */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10" />
             {/* Left gradient (darkest on left for text legibility) */}
@@ -224,23 +293,36 @@ export function ExecReadyLayout({ scene, onBack, onPrev, onNext }: ExecReadyLayo
 
               {/* Headline */}
               <h2 className="text-5xl md:text-6xl font-medium leading-[1.1] tracking-tight text-white mb-4 max-w-4xl" style={{ fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif" }}>
-                {scene.jtbd || scene.name}
+                {activeArcMeta?.title || scene.jtbd || scene.name}
               </h2>
               
               <p className="text-lg font-light text-white/60 mb-10 w-auto leading-relaxed">
-                {scene.subtitle || scene.name || 'The transformation begins.'}
+                {activeArcMeta?.description || scene.subtitle || scene.name || 'The transformation begins.'}
               </p>
 
-              {/* Cinematic Metrics: Old -> New */}
-              <div className="flex items-baseline gap-6 mb-8">
-                <span className="text-3xl md:text-4xl font-normal text-white/30 line-through decoration-red-500/50 decoration-2">
-                  {oldWorldMetric}
-                </span>
-                <span className="text-white/20 text-2xl font-light">→</span>
-                <span className="text-4xl md:text-5xl font-semibold text-white" style={{ fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif" }}>
-                  {newWorldMetric}
-                </span>
-              </div>
+              {/* Conditional Metrics: Hero Metric (N2) or Classic (N1) */}
+              {overrides?.heroMetric ? (
+                /* COMPACT EXEC READY METRIC (N2) - LEFT ALIGNED */
+                <div className="mt-12 mb-8">
+                  <h3 className="text-[12px] font-bold text-white/50 uppercase tracking-widest mb-4">{overrides.heroMetric.label}</h3>
+                  <div className="flex items-center gap-6 text-[48px] md:text-[64px] font-black tracking-tight">
+                    <span className="text-white/30 line-through decoration-white/50 decoration-2">{overrides.heroMetric.old}</span>
+                    <span className="text-white/20 text-3xl">→</span>
+                    <span className="text-white" style={{ fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif" }}>{overrides.heroMetric.new}</span>
+                  </div>
+                </div>
+              ) : (
+                /* N1 CLASSIC EXEC READY METRICS */
+                <div className="flex items-baseline gap-6 mb-8">
+                  <span className="text-3xl md:text-4xl font-normal text-white/30 line-through decoration-red-500/50 decoration-2">
+                    {oldWorldMetric}
+                  </span>
+                  <span className="text-white/20 text-2xl font-light">→</span>
+                  <span className="text-4xl md:text-5xl font-semibold text-white" style={{ fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif" }}>
+                    {newWorldMetric}
+                  </span>
+                </div>
+              )}
 
 
               {/* CTA */}

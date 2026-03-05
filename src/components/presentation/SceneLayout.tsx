@@ -14,6 +14,7 @@ import { resetDealVelocityCardMemory } from "./scenes/DealVelocityCard";
 import { resetPipelineHealthCardMemory } from "./scenes/PipelineHealthCard";
 import { resetWinRateCardMemory } from "./scenes/WinRateCard";
 import { resetConfirmationMemory } from "./scenes/Arc1AgentforcePanel";
+import AnimatedQuotaTracker, { resetAnimatedQuotaTrackerMemory } from "./AnimatedQuotaTracker";
 import { usePrototypeMode } from "@/context/PrototypeModeContext";
 import { usePresentationScene } from "@/context/PresentationSceneContext";
 import { useArcNavigation } from "@/context/ArcNavigationContext";
@@ -163,6 +164,7 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
   }, [showProto, setIsPrototypeMode]);
   
   // Reset memory vaults when starting scenarios (Scene 1) - run when Scene 1 becomes active
+  // Also reset animated quota tracker for all Narrative 1 scenes (1-13) to ensure fresh animations
   useEffect(() => {
     if (scene.id === 1) {
       resetQuotaTrackerMemory();
@@ -172,6 +174,10 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
       resetPipelineHealthCardMemory();
       resetWinRateCardMemory();
       resetConfirmationMemory();
+    }
+    // Reset animated quota tracker for all Narrative 1 scenes (1-13)
+    if (scene.id >= 1 && scene.id <= 13) {
+      resetAnimatedQuotaTrackerMemory();
     }
   }, [scene.id]); // Reset whenever Scene 1 becomes active
 
@@ -213,8 +219,12 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
           // RESTORED LEGACY STORY: Now living in Arc 2 (Scene 202)
           // Render Scene1 which wraps SlackConceptArc1
           return <Scene1 onNext={() => {}} skipNarrative={true} />;
-        } else if (scene.id >= 203 && scene.id <= 206) {
-          // N2A3-N2A6: Use generic SlackAppShellWrapper with arc payload
+        } else if (scene.id === 203) {
+          // N2A3: Use SlackAppShellWrapper with Priority Prospects work mode
+          const payload = activeArcMeta?.payload || { defaultNavId: 'today' as const, sidebarDms: [] };
+          return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={payload} isN2A3={true} />;
+        } else if (scene.id >= 204 && scene.id <= 206) {
+          // N2A4-N2A6: Use generic SlackAppShellWrapper with arc payload
           // Ensure we always have a valid payload, fallback to default if metadata lookup fails
           const payload = activeArcMeta?.payload || { defaultNavId: 'today' as const, sidebarDms: [] };
           return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={payload} />;
@@ -344,9 +354,9 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
   }
 
   return (
-    <div className="sp fixed z-[200] overflow-hidden" style={{ background: "var(--bg)", animation: showProto ? undefined : "pageIn 0.4s ease both", top: "var(--header-height, 40px)", left: 0, right: 0, width: "100vw", minWidth: "100%", height: "calc(100vh - var(--header-height, 40px))", pointerEvents: showProto ? 'none' : 'auto' }}>
+    <div className="sp fixed z-[200] overflow-hidden" style={{ background: "var(--bg)", top: "var(--header-height, 40px)", left: 0, right: 0, width: "100vw", minWidth: "100%", height: "calc(100vh - var(--header-height, 40px))", pointerEvents: showProto ? 'none' : 'auto' }}>
       {!showProto && (
-        <div className="relative w-full h-screen overflow-hidden bg-[#F4F7FA] font-sans text-gray-900">
+        <div className="relative w-full h-screen overflow-hidden bg-[#F4F7FA] font-sans text-gray-900" style={{ minHeight: "100vh" }}>
           {/* 1. CINEMATIC BACKGROUND IMAGE */}
           <div className="absolute top-0 left-0 w-full md:w-[70%] h-full z-0">
             <img 
@@ -367,14 +377,14 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
 
           {/* 2. FOREGROUND CONTENT AREA */}
           <div className="relative z-10 w-full h-full flex justify-end">
-            <div className="w-[55%] max-w-4xl h-full flex flex-col justify-center pl-10 pr-24 py-16 overflow-y-auto">
+            <div className="w-[55%] max-w-4xl h-full flex flex-col items-start text-left px-10 overflow-y-auto" style={{ paddingTop: '120px', paddingBottom: '120px' }}>
               
               {/* HEADER */}
-              <div className="mb-10">
-                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
+              <div className="mb-6 w-full">
+                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">
                   ARC {activeArcMeta?.value || "1"} • DESKTOP
                 </div>
-                <h1 className="text-[56px] font-extrabold tracking-tight text-gray-900 mb-4 leading-tight">
+                <h1 className="text-[56px] font-extrabold tracking-tight text-gray-900 mb-3 leading-tight">
                   {activeArcMeta?.title || "Arc Title"}
                 </h1>
                 <p className="text-[18px] text-gray-700 leading-relaxed max-w-xl">
@@ -383,68 +393,54 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
               </div>
 
               {/* THE QUOTA SLIDER (Only shows for N1) */}
-              {!arcPayload?.presentationOverrides?.hideQuotaSlider && (
-                <div className="mb-10 max-w-2xl">
-                  <div className="flex justify-between items-end mb-2">
-                    <span className="text-[11px] font-bold text-gray-900 uppercase tracking-widest">QUOTA IMPACT</span>
-                    <div className="text-right">
-                      <span className="text-4xl font-black block leading-none">0%</span>
-                      <span className="text-[13px] text-gray-500">$0 / $500,000</span>
-                    </div>
-                  </div>
-                  <div className="h-2 w-full bg-gray-200 rounded-full mb-3 flex overflow-hidden">
-                     <div className="h-full bg-[#2BAC76] w-[15%]"></div>
-                     <div className="h-full border-l border-white bg-blue-500 w-[5%]"></div>
-                  </div>
-                  <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
-                    <span className="text-[#2BAC76]">● CLOSED</span>
-                    <span className="text-blue-500">● IN PROGRESS</span>
-                    <span className="text-gray-400">● NOT STARTED</span>
-                    <span className="text-red-500">● LOST</span>
-                  </div>
-                </div>
+              {!arcPayload?.presentationOverrides?.hideQuotaSlider && scene.pipeline && (
+                <AnimatedQuotaTracker pipeline={scene.pipeline} index={scene.id} />
               )}
 
               {/* STORY TEXT (N2 Stacked vs N1 Side-by-Side) */}
               {arcPayload?.presentationOverrides?.layoutStyle === "breakthrough" ? (
                 /* N2: Friction vs Breakthrough Layout */
-                <div className="flex flex-col gap-4 mb-10 max-w-2xl">
-                   <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div className="flex flex-col gap-3 mb-6 max-w-2xl w-full">
+                   <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm text-left">
                      <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{arcPayload.presentationOverrides.oldWorldTitle || "🔴 THE FRICTION"}</h3>
                      <p className="text-[14px] text-gray-800 leading-relaxed">{arcPayload.presentationOverrides.oldWorldText}</p>
                    </div>
-                   <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-100 shadow-sm">
+                   <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-100 shadow-sm text-left">
                      <h3 className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-2">{arcPayload.presentationOverrides.newWorldTitle || "🔵 THE BREAKTHROUGH"}</h3>
                      <p className="text-[14px] text-gray-800 leading-relaxed">{arcPayload.presentationOverrides.newWorldText}</p>
                    </div>
                 </div>
               ) : (
                 /* N1: Original Side-by-Side Layout */
-                <div className="grid grid-cols-2 gap-10 mb-10 pt-6 border-t border-gray-200/60 max-w-3xl">
-                  <div>
-                    <h3 className="text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-3">🔴 OLD WORLD</h3>
+                <div className="grid grid-cols-2 gap-6 mb-6 pt-4 border-t border-gray-200/60 max-w-3xl w-full">
+                  <div className="text-left">
+                    <h3 className="text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-2">
+                      {arcPayload?.presentationOverrides?.oldWorldTitle || "🔴 OLD WORLD"}
+                    </h3>
                     <p className="text-[14px] text-gray-800 leading-relaxed">
-                      Rita logs into Salesforce, opens a forecast spreadsheet, tabs between Clari, her manager's template, and last quarter's actuals. 3.2 hours of political alignment before she submits a number she doesn't fully believe in.
+                      {arcPayload?.presentationOverrides?.oldWorldText || "Rita logs into Salesforce, opens a forecast spreadsheet, tabs between Clari, her manager's template, and last quarter's actuals. 3.2 hours of political alignment before she submits a number she doesn't fully believe in."}
                     </p>
                   </div>
-                  <div>
-                    <h3 className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-3">🔵 WITH INTELLIGENCE</h3>
+                  <div className="text-left">
+                    <h3 className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-2">
+                      {arcPayload?.presentationOverrides?.newWorldTitle || "🔵 WITH INTELLIGENCE"}
+                    </h3>
                     <p className="text-[14px] text-gray-800 leading-relaxed">
-                      Slack opens. @slackbot has modelled three scenarios overnight. Rita drags a slider. The machine's workload grows. Her hours stay flat. She approves $600K in 4 minutes and believes it for the first time.
+                      {arcPayload?.presentationOverrides?.newWorldText || "Slack opens. @slackbot has modelled three scenarios overnight. Rita drags a slider. The machine's workload grows. Her hours stay flat. She approves $600K in 4 minutes and believes it for the first time."}
                     </p>
                   </div>
                 </div>
               )}
 
               {/* METRICS GRID */}
-              <div className="mb-10 pt-6 border-t border-gray-200/60 max-w-3xl">
+              <div className="mb-6 pt-4 border-t border-gray-200/60 max-w-3xl w-full">
                 {arcPayload?.presentationOverrides?.heroMetric ? (
                   /* N2 Exec Ready Metric */
-                  <div className="mt-2">
-                    <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">
+                  <div className="mt-1">
+                    <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-3">
                       {arcPayload.presentationOverrides.heroMetric.label}
                     </h3>
-                    <div className="flex items-center gap-6 text-[64px] font-black tracking-tighter">
+                    <div className="flex items-center gap-5 text-[64px] font-black tracking-tighter">
                       <span className="text-gray-400 line-through decoration-red-400/60 decoration-4">
                         {arcPayload.presentationOverrides.heroMetric.old}
                       </span>
@@ -456,21 +452,21 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
                   </div>
                 ) : (
                   /* N1 Original 2x2 Grid */
-                  <div className="grid grid-cols-2 gap-y-10 gap-x-10 mt-2">
+                  <div className="grid grid-cols-2 gap-y-6 gap-x-8 mt-1">
                     <div>
-                      <h2 className="text-[52px] font-black text-[#FF4545] leading-none mb-2">{arcPayload?.presentationOverrides?.metricsGrid?.topLeft?.value || "3.2 hrs"}</h2>
+                      <h2 className="text-[52px] font-black text-[#FF4545] leading-none mb-1">{arcPayload?.presentationOverrides?.metricsGrid?.topLeft?.value || "3.2 hrs"}</h2>
                       <p className="text-[11px] font-bold tracking-widest text-gray-700 uppercase">{arcPayload?.presentationOverrides?.metricsGrid?.topLeft?.label || "LOST TO QUARTERLY PLANNING"}</p>
                     </div>
                     <div>
-                      <h2 className="text-[52px] font-black text-[#0055FF] leading-none mb-2">{arcPayload?.presentationOverrides?.metricsGrid?.topRight?.value || "4 min"}</h2>
+                      <h2 className="text-[52px] font-black text-[#0055FF] leading-none mb-1">{arcPayload?.presentationOverrides?.metricsGrid?.topRight?.value || "4 min"}</h2>
                       <p className="text-[11px] font-bold tracking-widest text-gray-700 uppercase">{arcPayload?.presentationOverrides?.metricsGrid?.topRight?.label || "TO APPROVE WITH INTELLIGENCE"}</p>
                     </div>
                     <div>
-                      <h2 className="text-[52px] font-black text-[#FF4545] leading-none mb-2">{arcPayload?.presentationOverrides?.metricsGrid?.bottomLeft?.value || "67%"}</h2>
+                      <h2 className="text-[52px] font-black text-[#FF4545] leading-none mb-1">{arcPayload?.presentationOverrides?.metricsGrid?.bottomLeft?.value || "67%"}</h2>
                       <p className="text-[11px] font-bold tracking-widest text-gray-700 uppercase">{arcPayload?.presentationOverrides?.metricsGrid?.bottomLeft?.label || "OF AES SANDBAG THEIR COMMIT"}</p>
                     </div>
                     <div>
-                      <h2 className="text-[52px] font-black text-[#0055FF] leading-none mb-2">{arcPayload?.presentationOverrides?.metricsGrid?.bottomRight?.value || "$600K"}</h2>
+                      <h2 className="text-[52px] font-black text-[#0055FF] leading-none mb-1">{arcPayload?.presentationOverrides?.metricsGrid?.bottomRight?.value || "$600K"}</h2>
                       <p className="text-[11px] font-bold tracking-widest text-gray-700 uppercase">{arcPayload?.presentationOverrides?.metricsGrid?.bottomRight?.label || "RITA'S PLAN — BELIEVED"}</p>
                     </div>
                   </div>
@@ -478,16 +474,39 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
               </div>
 
               {/* FOOTER ACTION */}
-              <div className="mt-auto flex items-center justify-between max-w-3xl">
-                <button 
-                  onClick={onNext}
-                  className="px-8 py-3.5 bg-[#0055FF] text-white rounded-lg text-[14px] font-bold shadow-md hover:bg-blue-700 transition-all flex items-center gap-3"
-                >
-                  Enter Prototype <span className="text-xl leading-none font-normal pb-0.5">→</span>
-                </button>
+              <div className="mt-auto flex items-center justify-between max-w-3xl w-full">
+                {hasPrototypeFromConfig || hasPrototypeFromLegacy ? (
+                  <button 
+                    onClick={() => {
+                      setShowProto(true);
+                      setIsPrototypeMode(true);
+                    }}
+                    className="px-8 py-3.5 bg-[#0055FF] text-white rounded-lg text-[14px] font-bold shadow-md hover:bg-blue-700 transition-all flex items-center gap-3"
+                  >
+                    Enter Prototype <span className="text-xl leading-none font-normal pb-0.5">→</span>
+                  </button>
+                ) : (
+                  <button 
+                    disabled
+                    className="px-8 py-3.5 bg-gray-200 text-gray-500 rounded-lg text-[14px] font-bold cursor-not-allowed flex items-center gap-3"
+                  >
+                    Prototype Coming <span className="text-xl leading-none font-normal pb-0.5">→</span>
+                  </button>
+                )}
                 <div className="flex items-center gap-4 text-blue-500">
-                   <span className="text-[10px] font-bold tracking-widest uppercase">SCENE 1 / 6</span>
-                   <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">→</div>
+                  {(() => {
+                    const currentScenario = getScenarioBySceneId(scene.id);
+                    const currentIndex = currentScenario ? activeScenarios.findIndex((s) => s.id === currentScenario.id) : -1;
+                    const displayNumber = currentIndex >= 0 ? currentIndex + 1 : scene.id;
+                    return (
+                      <>
+                        <span className="text-[10px] font-bold tracking-widest uppercase">
+                          SCENE {displayNumber} / {activeScenarios.length}
+                        </span>
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">→</div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 

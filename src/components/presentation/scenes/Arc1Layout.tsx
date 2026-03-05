@@ -200,7 +200,7 @@ export function Arc1Layout() {
       // Open the panel when Q1 planning CTA is clicked - start directly with loading
       setIsPanelOpen(true);
       // Initialize feed with loading state (no greeting - that's in main chat)
-      setPanelFeed([{ id: 'loading-1', type: 'loading' }]);
+      setPanelFeed([{ id: 'loading-1', type: 'loading' as PanelFeedItemType }]);
       // Trigger panel flow - main chat stays static
       arcNavigation.setArcState({ arc: 1, screen: 2 });
       // Planner will be added via onComplete callback from LoadingRevealsComponent - NO FIXED DELAYS
@@ -222,7 +222,7 @@ export function Arc1Layout() {
       }
       // Remove loading, add planner
       const withoutLoading = prev.filter(item => item.type !== 'loading');
-      return [...withoutLoading, { id: 'planner-1', type: 'planner', data: { stepperValue } }];
+      return [...withoutLoading, { id: 'planner-1', type: 'planner' as PanelFeedItemType, data: { stepperValue } }];
     });
     arcNavigation.setArcState({ arc: 1, screen: 3 });
   }, [stepperValue]);
@@ -231,7 +231,7 @@ export function Arc1Layout() {
     // Don't add messages to main chat - all post-approval UI goes to right panel
     // Add confirmation checklist block (animated checkmarks)
     setPanelFeed(prev => {
-      const newFeed = [...prev, { id: 'confirmation-1', type: 'confirmation', data: { stepperValue } }];
+      const newFeed: PanelFeedItem[] = [...prev, { id: 'confirmation-1', type: 'confirmation' as PanelFeedItemType, data: { stepperValue } }];
       return newFeed;
     });
     arcNavigation.setArcState({ arc: 1, screen: 4 });
@@ -247,7 +247,7 @@ export function Arc1Layout() {
       if (hasNextSteps) {
         return prev; // Don't add duplicate
       }
-      const newFeed = [...prev, { id: 'next-steps-1', type: 'next-steps', data: { stepperValue } }];
+      const newFeed: PanelFeedItem[] = [...prev, { id: 'next-steps-1', type: 'next-steps' as PanelFeedItemType, data: { stepperValue } }];
       
       // Trigger scroll after feed updates - use setTimeout to ensure React has rendered
       setTimeout(() => {
@@ -267,7 +267,7 @@ export function Arc1Layout() {
       if (hasInsights) {
         return prev; // Don't add duplicate
       }
-      return [...prev, { id: 'acme-stakeholder-insights', type: 'stakeholder-insights', data: { stepperValue } }];
+      return [...prev, { id: 'acme-stakeholder-insights', type: 'stakeholder-insights' as PanelFeedItemType, data: { stepperValue } }];
     });
   }, [stepperValue]);
 
@@ -285,7 +285,7 @@ export function Arc1Layout() {
       if (hasActivities) {
         return prev; // Don't add duplicate
       }
-      return [...prev, { id: 'acme-activities', type: 'activities', data: { stepperValue } }];
+      return [...prev, { id: 'acme-activities', type: 'activities' as PanelFeedItemType, data: { stepperValue } }];
     });
   }, [stepperValue]);
 

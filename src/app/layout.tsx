@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Lato } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next";
+import { Suspense } from "react";
 
 import "./globals.css";
 
@@ -42,13 +43,15 @@ export default function RootLayout({
         <PresentationSceneProvider>
           <PrototypeModeProvider>
             <ArcNavigationProvider>
-              <ScenarioVisibilityProvider>
-                <Toaster />
-                {hasConvex && <Modals />}
-                {/* Global Navigation Header - rendered once at root level */}
-                <GlobalNavigationHeader />
-                <NuqsAdapter>{children}</NuqsAdapter>
-              </ScenarioVisibilityProvider>
+              <Suspense fallback={null}>
+                <ScenarioVisibilityProvider>
+                  <Toaster />
+                  {hasConvex && <Modals />}
+                  {/* Global Navigation Header - rendered once at root level */}
+                  <GlobalNavigationHeader />
+                  <NuqsAdapter>{children}</NuqsAdapter>
+                </ScenarioVisibilityProvider>
+              </Suspense>
             </ArcNavigationProvider>
           </PrototypeModeProvider>
         </PresentationSceneProvider>

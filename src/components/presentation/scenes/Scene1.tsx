@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ScenarioNarrative } from "../ScenarioNarrative";
-import { DesktopSlackShell } from "../DesktopSlackShell";
-import { Arc1Layout } from "./Arc1Layout";
+import { SlackConceptArc1 } from "./SlackConceptArc1";
 import { useDemoData } from "@/context/DemoDataContext";
 
 interface Scene1Props {
@@ -61,7 +60,7 @@ export function Scene1({ onNext, skipNarrative = false }: Scene1Props) {
         transition={{ duration: 0.3 }}
         className="h-full w-full"
       >
-        <Arc1Layout />
+        <SlackConceptArc1 />
       </motion.div>
     </AnimatePresence>
   );

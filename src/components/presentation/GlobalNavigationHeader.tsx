@@ -8,7 +8,7 @@ import { useScenarioVisibility } from "@/context/ScenarioVisibilityContext";
 import { SCENES } from "@/lib/presentation-data";
 import { useRouter } from "next/navigation";
 import { IconHome, IconSettings } from "@/components/icons";
-import { Monitor, Smartphone, Watch, X } from "lucide-react";
+import { Monitor, Smartphone, Watch, X, ChevronDown, Check, Link as LinkIcon, Copy } from "lucide-react";
 import { createPortal } from "react-dom";
 import { resetQuotaTrackerMemory } from "./QuotaTracker";
 import { resetAnimatedCounterMemory } from "./AnimatedCounter";
@@ -58,8 +58,8 @@ const SCENE_TO_ARC: Record<number, number> = {
   8: 8,
   9: 9,
   10: 10,
-  11: 1, // New scenarios: Mobile Pulse and Watch Win map to Arc 1
-  12: 1,
+  11: 11, // Mobile Pulse maps to Arc 11
+  12: 12, // Watch Win maps to Arc 12
   13: 10,
 };
 
@@ -107,6 +107,8 @@ export function GlobalNavigationHeader() {
     toggleArcVisibility,
     presentationDensity,
     setPresentationDensity,
+    defaultNarrative,
+    setDefaultNarrative,
     reorderArcs,
   } = useScenarioVisibility();
   const router = useRouter();
@@ -118,6 +120,153 @@ export function GlobalNavigationHeader() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
+  
+  // Custom Dropdown Component for precise positioning
+  const CustomDropdown = ({ label, value, options, onChange }: { 
+    label: string; 
+    value: string; 
+    options: {label: string, value: string}[]; 
+    onChange: (val: string) => void;
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside (but not on modal overlay)
+    useEffect(() => {
+      if (!isOpen) return;
+
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        
+        // Only close if click is truly outside the dropdown AND not on the modal overlay
+        const isModalOverlay = target?.closest('[class*="bg-black/55"]');
+        const isInsideDropdown = dropdownRef.current?.contains(target);
+        
+        if (!isInsideDropdown && !isModalOverlay) {
+          setIsOpen(false);
+        }
+      };
+
+      // Use a delay to allow button click to register first, then attach listener
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside, true);
+      }, 100); // Increased delay to ensure button click completes
+      
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('mousedown', handleClickOutside, true);
+      };
+    }, [isOpen, label]);
+
+    const handleButtonClick = (e: React.MouseEvent) => {
+      e.stopPropagation(); // Prevent modal overlay from closing
+      setIsOpen(!isOpen);
+    };
+
+    const selectedOption = options.find(o => o.value === value);
+    const displayText = selectedOption?.label || value;
+
+    return (
+      <div ref={dropdownRef} className="relative">
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{label}</label>
+        <div className="relative">
+          <button 
+            type="button"
+            onClick={handleButtonClick}
+            onMouseDown={(e) => e.stopPropagation()} // Prevent modal overlay from closing
+            className="w-full bg-[#0F172A] border border-white/20 rounded-lg pl-4 pr-10 py-3 text-sm text-left appearance-none outline-none focus:border-blue-500 transition-colors relative text-white"
+          >
+            {displayText}
+            <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          </button>
+          
+          {/* The Menu - Strictly anchored to the bottom */}
+          {isOpen && (
+            <div 
+              className="absolute top-full left-0 right-0 mt-1 bg-[#0F172A] border border-white/20 rounded-lg shadow-xl z-[10020] overflow-hidden"
+              style={{ position: 'absolute' }}
+              onClick={(e) => {
+                // Stop propagation to prevent modal overlay from closing
+                e.stopPropagation();
+              }}
+              onMouseDown={(e) => {
+                // Also stop mousedown to prevent click-outside handler from firing
+                e.stopPropagation();
+              }}
+            >
+              {options.map(opt => (
+                <div 
+                  key={opt.value}
+                  onClick={(e) => { 
+                    e.stopPropagation();
+                    onChange(opt.value); 
+                    setIsOpen(false); 
+                  }}
+                  className={`px-4 py-3 text-sm cursor-pointer flex items-center justify-between transition-colors ${
+                    value === opt.value 
+                      ? 'bg-gray-800 text-white' 
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  }`}
+                >
+                  {opt.label}
+                  {value === opt.value && <Check className="w-4 h-4 text-white" />}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Handle Save and Close - updates URL, copies link, then closes panel
+  const handleSaveAndClose = () => {
+    // Update URL with current configuration
+    const params = new URLSearchParams(window.location.search);
+    params.set('n', localNarrative);
+    params.set('style', localDensity);
+    // Removed 'arcs' param since we removed the dropdown
+    
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, '', newUrl);
+    
+    // Copy full URL to clipboard
+    const fullUrl = `${window.location.origin}${newUrl}`;
+    navigator.clipboard.writeText(fullUrl).then(() => {
+      setIsCopied(true);
+      // Give the user 600ms to see the "Saved & Copied!" text before closing
+      setTimeout(() => {
+        setIsCopied(false);
+        setIsSettingsOpen(false);
+      }, 600);
+    });
+  };
+
+  // URL parameter helpers
+  const getUrlParam = (key: string, defaultVal: string) => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get(key) || defaultVal;
+    }
+    return defaultVal;
+  };
+
+  // Initialize state from URL params (only on mount)
+  const [localNarrative, setLocalNarrative] = useState(() => getUrlParam('n', activeNarrative));
+  const [localDensity, setLocalDensity] = useState(() => getUrlParam('style', presentationDensity));
+  
+  // Dropdown options - convert context narrativeOptions to dropdown format
+  const narrativeDropdownOptions = narrativeOptions.map(opt => ({
+    label: opt.label,
+    value: opt.id
+  }));
+
+  const densityOptions = [
+    { label: "Detailed Narrative", value: "detailed-narrative" },
+    { label: "Exec Ready", value: "exec-ready" },
+    { label: "Auto Demo Mode", value: "auto-demo-mode" }
+  ];
+
 
   useEffect(() => {
     setIsMounted(true);
@@ -158,6 +307,7 @@ export function GlobalNavigationHeader() {
 
   // Handle navigation to home
   const handleHome = () => {
+    setIsPrototypeMode(false);
     setCurrentScene(0);
     router.push("/");
   };
@@ -166,15 +316,24 @@ export function GlobalNavigationHeader() {
   // Clicking a number always takes you to the arc's "home" (cover page), exiting prototype mode
   const handleArcChange = (activeIndex: number, screen: number = 1) => {
     const targetScenario = activeScenarios[activeIndex];
-    if (targetScenario) {
-      const targetScene = targetScenario.sceneId;
-      // Exit prototype mode to show cover page
-      setIsPrototypeMode(false);
-      setCurrentScene(targetScene);
-      const arc = SCENE_TO_ARC[targetScene] || 1;
-      arcNavigation.setArc(arc, screen);
-      router.push("/");
+    if (!targetScenario) {
+      return;
     }
+
+    const targetScene = targetScenario.sceneId;
+    const arc = SCENE_TO_ARC[targetScene] || 1;
+    
+    // Exit prototype mode to show cover page
+    setIsPrototypeMode(false);
+    
+    // Update arc navigation state
+    arcNavigation.setArc(arc, screen);
+    
+    // Set scene state - this should trigger re-render
+    setCurrentScene(targetScene);
+    
+    // Navigate to home route
+    router.push("/");
   };
 
   // Get current active index from currentScene
@@ -317,7 +476,7 @@ export function GlobalNavigationHeader() {
   const currentActiveIndex = getCurrentActiveIndex();
   
   return (
-    <header className={`global-header fixed top-0 left-0 w-full bg-[#040A14]/80 backdrop-blur-xl z-[10000] flex items-center justify-between px-8 ${shouldHideBorder ? '' : 'border-b border-white/10'}`} style={{ height: '40px' }}>
+    <header className={`global-header fixed top-0 left-0 w-full bg-[#040A14]/80 backdrop-blur-xl z-[10000] flex items-center justify-between px-8 ${shouldHideBorder ? '' : 'border-b border-white/10'}`} style={{ height: '40px', pointerEvents: 'auto' }}>
       {/* Left Side: Hamburger Menu + Branding/Scene Info */}
       <div className="flex items-center gap-4 flex-shrink-0">
         {/* Hamburger Menu */}
@@ -398,21 +557,30 @@ export function GlobalNavigationHeader() {
           )}
         </div>
         
-        <img src="/slackbot-logo.svg" alt="SlackbotPro" className="w-6 h-6 flex-shrink-0" />
+        <img 
+          src="/slackbot-logo.svg" 
+          alt="SlackbotPro" 
+          className="w-6 h-6 flex-shrink-0"
+        />
         <span className="text-[10px] tracking-[0.2em] text-gray-500 uppercase font-medium whitespace-nowrap">
           SlackbotPro <span className="mx-2 text-white/20">|</span> {context === "home" ? "SCENE 0" : currentArc ? `ARC ${currentArc} · ${currentDate}` : "SCENE 0"}
         </span>
       </div>
 
       {/* Center: Arc Navigation */}
-      <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/5 flex-shrink-0">
+      <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/5 flex-shrink-0" style={{ pointerEvents: 'auto', zIndex: 10001 }}>
         {/* Home Icon */}
         <button
           type="button"
-          onClick={handleHome}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleHome();
+          }}
           className={`w-8 h-8 rounded-full text-xs transition-colors select-none outline-none flex items-center justify-center flex-shrink-0 ${
             currentScene === 0 ? 'bg-white text-black font-bold' : 'text-gray-500 hover:text-white'
           }`}
+          style={{ pointerEvents: 'auto', cursor: 'pointer' }}
         >
           <IconHome width={16} height={16} stroke="currentColor" strokeWidth={2} />
         </button>
@@ -425,10 +593,14 @@ export function GlobalNavigationHeader() {
           const isActive = currentScene !== 0 && scenario.sceneId === currentScene;
           const DeviceIcon = getDeviceIcon(scenario.device);
           return (
-            <div key={scenario.id} className="relative group">
+            <div key={scenario.id} className="relative group" style={{ pointerEvents: 'auto' }}>
               <button
                 type="button"
-                onClick={() => handleArcChange(index, 1)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleArcChange(index, 1);
+                }}
                 onMouseEnter={() => {
                   hoverTimeoutRef.current = setTimeout(() => {
                     setHoveredScenarioIndex(index);
@@ -443,6 +615,7 @@ export function GlobalNavigationHeader() {
                 className={`w-8 h-8 rounded-full text-xs transition-colors select-none outline-none flex items-center justify-center flex-shrink-0 ${
                   isActive ? 'bg-white text-black font-bold' : 'text-gray-500 hover:text-white'
                 }`}
+                style={{ pointerEvents: 'auto', cursor: 'pointer' }}
               >
                 {displayNumber}
               </button>
@@ -523,9 +696,9 @@ export function GlobalNavigationHeader() {
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "white";
               }}
-              title={currentArc >= 10 ? "Back to Start" : "Next Arc (Shift+→)"}
+              title={(currentArc ?? 0) >= 10 ? "Back to Start" : "Next Arc (Shift+→)"}
             >
-              <span>{currentArc >= 10 ? "Back to Start" : "Next Arc"}</span>
+              <span>{(currentArc ?? 0) >= 10 ? "Back to Start" : "Next Arc"}</span>
               <span>→</span>
             </button>
           </>
@@ -546,12 +719,10 @@ export function GlobalNavigationHeader() {
             onClick={() => setIsSettingsOpen(false)}
           />
           <div className="fixed inset-0 z-[10011] flex items-center justify-center p-4">
-            <div className="w-full max-w-xl rounded-2xl border border-white/15 bg-slate-950/60 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col" style={{ minHeight: '680px' }}>
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/70">
-                <div>
-                  <h3 className="text-white text-base font-semibold">Pitch Engine Settings</h3>
-                  <p className="text-xs text-gray-300 mt-1">Configure storyline, view mode, and designer controls.</p>
-                </div>
+            <div className="w-full max-w-xl rounded-2xl border border-white/15 bg-slate-950/60 backdrop-blur-xl shadow-2xl overflow-visible flex flex-col" style={{ minHeight: '680px' }}>
+              {/* HEADER - Title only */}
+              <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-slate-950/70">
+                <h3 className="text-white text-base font-semibold">Prototype Configuration</h3>
                 <button
                   type="button"
                   onClick={() => setIsSettingsOpen(false)}
@@ -562,41 +733,38 @@ export function GlobalNavigationHeader() {
                 </button>
               </div>
               {/* Scrollable body — grows to fill space */}
-              <div className="p-6 space-y-5 flex-1 overflow-y-auto">
-                <div>
-                  <label htmlFor="storyline-select" className="block text-xs uppercase tracking-wide text-gray-300 mb-2">
-                    Select Narrative
-                  </label>
-                  <select
-                    id="storyline-select"
-                    value={activeNarrative}
-                    onChange={(e) => setActiveNarrative(e.target.value)}
-                    className="w-full rounded-lg border border-white/20 bg-[#0F172A] text-white px-3 py-2 text-sm outline-none"
-                  >
-                    {narrativeOptions.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="viewmode-select" className="block text-xs uppercase tracking-wide text-gray-300 mb-2">
-                    Presentation Density
-                  </label>
-                  <select
-                    id="viewmode-select"
-                    value={presentationDensity}
-                    onChange={(e) => setPresentationDensity(e.target.value)}
-                    className="w-full rounded-lg border border-white/20 bg-[#0F172A] text-white px-3 py-2 text-sm outline-none"
-                  >
-                    <option value="detailed-narrative">Detailed Narrative</option>
-                    <option value="exec-ready">Exec Ready</option>
-                    <option value="auto-demo-mode">Auto Demo Mode</option>
-                  </select>
-                </div>
+              {/* BODY - Scrollable content */}
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto overflow-x-visible">
+                {/* Narrative Dropdown */}
+                <CustomDropdown 
+                  label="Select Narrative" 
+                  value={localNarrative} 
+                  options={narrativeDropdownOptions} 
+                  onChange={(val) => {
+                    setLocalNarrative(val);
+                    setActiveNarrative(val);
+                  }} 
+                />
+                
+                {/* Presentation Density Dropdown */}
+                <CustomDropdown 
+                  label="Presentation Density" 
+                  value={localDensity} 
+                  options={densityOptions} 
+                  onChange={(val) => {
+                    setLocalDensity(val);
+                    setPresentationDensity(val);
+                  }} 
+                />
+                
+                {/* Removed redundant "Arcs to Display" dropdown */}
                 <div className="mb-4">
-                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Story Arcs</label>
+                  <div className="flex items-center mb-4 mt-6">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Story Arcs</label>
+                    <span className="ml-2 bg-gray-800 border border-gray-700 text-gray-300 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center justify-center min-w-[20px]">
+                      {currentNarrativeData.length}
+                    </span>
+                  </div>
                   <div className="max-h-64 overflow-y-auto pr-2 pb-2 space-y-3">
                     {currentNarrativeData.map((arc, index) => {
                       const isDragging = draggedIndex === index;
@@ -672,13 +840,24 @@ export function GlobalNavigationHeader() {
                   </div>
                 </div>
               </div>
-              <div className="px-6 py-4 border-t border-white/10 bg-slate-950/70 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsSettingsOpen(false)}
-                  className="rounded-lg bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-white/90 transition-colors"
+              
+              {/* FOOTER - Darker background with Save and Close button */}
+              <div className="px-6 py-4 bg-[#15151e] border-t border-white/10 flex justify-end items-center">
+                <button 
+                  onClick={handleSaveAndClose}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-[14px] transition-all ${
+                    isCopied 
+                      ? 'bg-green-600 text-white' 
+                      : 'bg-[#2563eb] hover:bg-blue-600 text-white'
+                  }`}
                 >
-                  Done
+                  {isCopied ? (
+                    <>
+                      <Check className="w-4 h-4"/> Saved & Copied!
+                    </>
+                  ) : (
+                    'Save and Close'
+                  )}
                 </button>
               </div>
             </div>

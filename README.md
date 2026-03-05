@@ -69,9 +69,16 @@ Make sure you have the following installed on your machine:
 
 **Cloning the Repository**
 
+For Salesforce employees (using Soma GitLab):
 ```bash
-git clone https://github.com/samarth-kamble/Slack-Clone.git
-cd Slack-Clone
+git clone https://git.soma.salesforce.com/prantik-banerjee/slack-vibeface-simulator.git
+cd slack-vibeface-simulator
+```
+
+For external contributors (using GitHub):
+```bash
+git clone https://github.com/prantiksf/slack-vibeface-simulator.git
+cd slack-vibeface-simulator
 ```
 **Installation**
 
@@ -106,3 +113,22 @@ pnpm dev
 bun dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser to view the project.
+
+## 👥 For Designers
+
+**New to this project?** Check out:
+- **[DESIGNER_SETUP.md](./DESIGNER_SETUP.md)** - Quick setup guide for designers
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Collaboration guidelines and workflow
+
+**Key points:**
+- Always create a feature branch (never commit to `main`)
+- Pull latest changes before starting work: `git pull soma main`
+- Test locally before pushing: `npm run dev`
+- Create a Merge Request for review before merging
+
+## 🔒 Protected Workflow
+
+This repository uses protected branches to prevent breaking changes:
+- `main` branch is protected - requires Merge Request approval
+- Always work in feature branches: `designer/your-name/feature-name`
+- Changes are reviewed before merging to `main`

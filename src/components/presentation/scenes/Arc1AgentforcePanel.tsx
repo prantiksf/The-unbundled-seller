@@ -6,6 +6,17 @@ import Image from "next/image";
 import { IconStar, IconPencil, IconMoreVertical, IconX, IconChevronDown, IconSearch, IconFilter, IconMessage, IconLightbulb, IconUsers } from "@/components/icons";
 import { MessageInput } from "@/components/shared/MessageInput";
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
+
+// Panel feed item type definition (matching Arc1Layout.tsx)
+type PanelFeedItemType = 'greeting' | 'loading' | 'planner' | 'confirmation' | 'next-steps' | 'heatmap' | 'stakeholder-insights' | 'activities';
+
+interface PanelFeedItem {
+  id: string;
+  type: PanelFeedItemType;
+  data?: {
+    stepperValue?: number;
+  };
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1380,35 +1391,40 @@ function Screen3Body({
   // Pre-approval view: Full Planner UI
   return (
     <div style={{ backgroundColor: "#ffffff" }}>
-      {/* Proactive Recommendation Banner */}
+      {/* 1. COMPACT AI NUDGE */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-4 p-4 rounded-lg border" 
-        style={{ backgroundColor: "#F0F9FF", borderColor: "#0EA5E9" }}
+        className="bg-gradient-to-r from-[#F0F4FF] to-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 mb-5 flex items-center justify-between shadow-sm"
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1">
-            <div className="text-sm font-semibold mb-1 flex items-start gap-2" style={{ color: "#0C4A6E" }}>
-              <Image src="/slackbot-logo.svg" alt="Slackbot" width={16} height={16} className="shrink-0 mt-0.5" />
-              <span>Slackbot analyzed your $1.2M pipeline. Recommended optimal quota: $615,000.</span>
-            </div>
-            <div className="text-xs" style={{ color: "#075985" }}>
-              Deploying 3 sequence agents will boost your win rate to 56.4%.
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0 border border-blue-100 text-sm">✨</div>
+          <div>
+            <h3 className="text-[13px] font-bold text-gray-900 leading-none">Optimal quota recommended: $615,000.</h3>
+            <p className="text-[12px] text-gray-500 mt-1 leading-none">Deploying 3 agents boosts win rate to 56.4%.</p>
           </div>
-          <SlackButton onClick={handleApplyOptimalPlan}>
-            Apply Optimal Plan
-          </SlackButton>
         </div>
+        <button onClick={handleApplyOptimalPlan} className="flex-shrink-0 ml-3 px-3 py-1.5 bg-white border border-gray-200 rounded-md text-[11px] font-bold text-blue-600 hover:border-blue-300 hover:text-blue-700 shadow-sm transition-all">
+          Apply
+        </button>
       </motion.div>
       
-      {/* Formal Header */}
-      <div className="mb-4 flex items-center gap-2">
-        <Image src="/slackbot-logo.svg" alt="Slackbot" width={24} height={24} />
-        <h1 className="text-lg font-semibold" style={{ color: T.colors.text }}>
-          Q1 Planner
-        </h1>
+      {/* 2. HEADER & CONTEXT */}
+      <div className="flex items-end justify-between mb-5">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg leading-none">📊</span>
+            <h1 className="text-[18px] font-black text-gray-900 tracking-tight leading-none">Q1 Planner</h1>
+          </div>
+          <p className="text-[12px] text-gray-500 font-medium mt-1.5">
+            Pipeline: <span className="text-gray-900 font-bold">{`$${(activePipelineValue / 1000000).toFixed(activePipelineValue >= 1000000 ? 1 : 2)}M`}</span> · Win Rate: <span className="text-gray-900 font-bold">52%</span> · Quota: <span className="text-gray-900 font-bold">$500K</span>
+          </p>
+        </div>
+        <div className="flex -space-x-1.5">
+          <div className="w-5 h-5 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[8px] font-bold text-blue-500 shadow-sm z-10">SF</div>
+          <div className="w-5 h-5 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[8px] font-bold text-purple-500 shadow-sm z-20">GO</div>
+          <div className="w-5 h-5 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[8px] font-bold text-red-500 shadow-sm z-30">GM</div>
+        </div>
       </div>
       
       {/* Full Planner UI - Collapsible when approved */}
@@ -1418,66 +1434,45 @@ function Screen3Body({
         transition={{ duration: 0.4, ease: "easeInOut" }}
         style={{ overflow: "hidden" }}
       >
-        {/* Sleek Header - Icon Stack */}
-        <div className="mb-4 flex items-center justify-between">
-          <div className="text-xs whitespace-nowrap" style={{ color: "#666" }}>
-            Active Pipeline: ${(activePipelineValue / 1000000).toFixed(activePipelineValue >= 1000000 ? 1 : 2)}M · Win Rate: 52% · Quota: $500K · Close rate: 68%
-          </div>
-          {/* Right-aligned overlapping icon stack */}
-          <ToolIconStack 
-            tools={["Salesforce", "Gong", "Highspot", "Gmail", "Google Calendar", "Clari"]} 
-            maxVisible={4}
-            size="md"
-          />
-        </div>
+        {/* 3. SEGMENTED CONTROLS */}
+      <div className={`flex bg-gray-100/80 p-1 rounded-lg mb-6 ${isDisabled ? "opacity-70 pointer-events-none" : ""}`}>
+        {[
+          { label: "Conservative", value: 400000 },
+          { label: "Quota", value: 500000 },
+          { label: "Stretch", value: 600000 },
+        ].map(({ label, value }) => {
+          const isActive = Math.abs(stepperValue - value) < 50000;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => !isDisabled && onStepperChange(value)}
+              disabled={isDisabled}
+              className={`flex-1 py-1.5 text-[12px] font-bold rounded-md transition-all ${
+                isActive ? 'bg-white text-gray-900 shadow-sm border border-gray-200/50' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Plan Selector */}
-      <div className="mb-4">
-        <div className={`flex gap-2 mb-4 ${isDisabled ? "opacity-70 pointer-events-none" : ""}`}>
-          {[
-            { label: "Conservative", value: 400000 },
-            { label: "Quota", value: 500000 },
-            { label: "Stretch", value: 600000 },
-          ].map(({ label, value }) => {
-            const isActive = Math.abs(stepperValue - value) < 50000;
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => !isDisabled && onStepperChange(value)}
-                disabled={isDisabled}
-                className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
-                  isActive ? "" : "hover:bg-gray-50"
-                }`}
-                style={{
-                  backgroundColor: isActive ? "#F3F4F6" : "#ffffff",
-                  color: "#1d1c1d",
-                  border: "1px solid #E0E0E0",
-                }}
-              >
-                {label}
-              </button>
-            );
-          })}
+      {/* 4. PREMIUM CUSTOM SLIDER */}
+      <div className={`mb-6 px-1 ${isDisabled ? "opacity-70 pointer-events-none" : ""}`}>
+        <div className="flex items-end justify-between mb-3">
+          <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Confidence Slider</h4>
+          <motion.div
+            key={stepperValue}
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            className="text-[28px] font-black text-gray-900 tracking-tight leading-none"
+          >
+            ${targetK.toLocaleString()},000
+          </motion.div>
         </div>
-        {/* Inline Confidence Slider - Single Row */}
-        <div className={`flex items-center gap-4 ${isDisabled ? "opacity-70 pointer-events-none" : ""}`}>
-          <label className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "#666", letterSpacing: "0.5px" }}>
-            CONFIDENCE SLIDER
-          </label>
-          <input
-            type="number"
-            min={400000}
-            max={700000}
-            step={5000}
-            value={stepperValue}
-            onChange={(e) => {
-              const next = Number(e.target.value || 500000);
-              onStepperChange(Math.max(400000, Math.min(700000, next)));
-            }}
-            className="w-24 px-2 py-1.5 rounded border text-sm whitespace-nowrap"
-            style={{ borderColor: "#E0E0E0", color: "#1d1c1d" }}
-          />
+        
+        <div className="relative w-full h-6 flex items-center">
           <input
             type="range"
             min={400000}
@@ -1485,102 +1480,54 @@ function Screen3Body({
             step={5000}
             value={stepperValue}
             onChange={(e) => onStepperChange(Number(e.target.value))}
-            className="flex-1 accent-gray-700"
+            className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer outline-none relative z-10 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-[4px] [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-[4px] [&::-moz-range-thumb]:border-blue-600 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md"
+            style={{
+              background: `linear-gradient(to right, #2563EB 0%, #2563EB ${((stepperValue - 400000) / 300000) * 100}%, #E2E8F0 ${((stepperValue - 400000) / 300000) * 100}%, #E2E8F0 100%)`,
+            }}
           />
-          <motion.span
-            key={stepperValue}
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            className="text-2xl font-bold whitespace-nowrap"
-            style={{ color: "#000000" }}
-          >
-            ${targetK.toLocaleString()},000
-          </motion.span>
         </div>
       </div>
 
-      {/* Plan Impact Card */}
-      <div className="mb-6 p-5 rounded-lg border bg-white" style={{ borderColor: "#E0E0E0", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: "#000000", fontSize: "12px", letterSpacing: "0.5px" }}>
-            PLAN IMPACT AT ${targetK.toLocaleString()}K
-          </div>
-          {/* Advanced Mode Toggle */}
+      {/* 5. COMPACT IMPACT CARD */}
+      <div className="bg-[#F8FAFC] border border-gray-100 rounded-xl p-4 mb-5">
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200/60">
+          <h3 className="text-[12px] font-bold text-gray-800 uppercase tracking-wide">Plan Impact</h3>
           <div className="flex items-center gap-2">
-            <label className="text-xs" style={{ color: "#666" }}>Advanced Mode</label>
-            <button
-              type="button"
+            <span className="text-[11px] text-gray-500 font-bold">Advanced</span>
+            <button 
               onClick={() => setIsAdvancedMode(!isAdvancedMode)}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                isAdvancedMode ? 'bg-[#6B21A8]' : 'bg-gray-300'
-              }`}
+              className={`w-8 h-4 rounded-full relative transition-colors duration-200 ${isAdvancedMode ? 'bg-blue-600' : 'bg-gray-300'}`}
             >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isAdvancedMode ? 'translate-x-5' : 'translate-x-1'
-                }`}
-              />
+              <div className={`w-3 h-3 rounded-full bg-white absolute top-0.5 transition-transform duration-200 shadow-sm ${isAdvancedMode ? 'left-4.5 translate-x-[14px]' : 'left-0.5'}`}></div>
             </button>
           </div>
         </div>
-        <div className="space-y-3">
-          {/* Basic View - Always Visible */}
-          <div className="flex justify-between items-center pb-3 border-b" style={{ borderColor: "#E0E0E0" }}>
-            <span className="text-sm" style={{ color: "#666" }}>Estimated Commission</span>
+
+        {/* Data Rows */}
+        <div className="space-y-2.5 mb-4">
+          <div className="flex items-end justify-between">
+            <span className="text-[13px] text-gray-600 font-medium">Estimated Commission</span>
             <motion.span
               key={commission}
               initial={{ scale: 1.1 }}
               animate={{ scale: 1 }}
-              className="text-2xl font-bold"
-              style={{ color: "#000000" }}
+              className="text-[22px] font-black text-[#2BAC76] leading-none"
             >
               ${commission.toLocaleString()}
             </motion.span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm" style={{ color: "#666" }}>Pipeline gap to close</span>
-            <span 
-              className="text-sm font-medium"
-              style={{ color: pipelineGap > 0 ? "#dc2626" : "#000000" }}
-            >
-              {pipelineGap === 0 ? "$0K" : `$${pipelineGap.toLocaleString()}`}
-            </span>
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[12px] text-gray-500">Pipeline gap to close</span>
+            <span className="text-[12px] font-bold text-gray-900">{pipelineGap === 0 ? "$0K" : `$${(pipelineGap / 1000).toFixed(0)}K`}</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm" style={{ color: "#666" }}>AI workload</span>
-            <motion.span
-              key={aiWorkload}
-              initial={{ scale: 1.1 }}
-              animate={{ scale: 1 }}
-              className="text-sm font-medium"
-              style={{ color: "#000000" }}
-            >
-              {aiWorkload >= 1000 ? "High" : aiWorkload >= 600 ? "Medium" : "Low"} ({aiWorkload.toLocaleString()} tasks)
-            </motion.span>
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-gray-500">AI workload</span>
+            <span className="text-[12px] font-bold text-gray-900">{aiWorkload >= 1000 ? "High" : aiWorkload >= 600 ? "Medium" : "Low"} ({aiWorkload.toLocaleString()} tasks)</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm" style={{ color: "#666" }}>Projected Win Rate</span>
-            <span 
-              className="text-sm font-medium"
-              style={{ 
-                color: projectedWinRate < 50 ? "#dc2626" : isOptimalRange ? "#10b981" : "#000000" 
-              }}
-            >
-              {projectedWinRate.toLocaleString(undefined, { maximumFractionDigits: 1 })}%
-              {winRateChange > 0 && (
-                <span style={{ color: "#10b981" }}> (+{winRateChange.toFixed(1)}% via Agentic Follow-ups)</span>
-              )}
-              {winRateChange < 0 && projectedWinRate < 50 && (
-                <span style={{ color: "#dc2626" }}> (drop from {baselineWinRate}%)</span>
-              )}
-              {mitigationType === 'pipeline-dilution' && winRateChange >= 0 && (
-                <span style={{ color: "#10b981" }}> (mitigated)</span>
-              )}
-            </span>
-          </div>
-          
-          {/* Pipeline Shortage Mitigation Alert (separate from Win Rate Dilution) */}
-          {pipelineGap > 0 && !pipelineShortageMitigated && (
+        </div>
+
+        {/* Pipeline Shortage Mitigation Alert (separate from Win Rate Dilution) */}
+        {pipelineGap > 0 && !pipelineShortageMitigated && (
             <motion.div
               key="pipeline-shortage-alert"
               initial={{ opacity: 0, height: 0 }}
@@ -1615,10 +1562,10 @@ function Screen3Body({
                 </button>
               </div>
             </motion.div>
-          )}
-          
-          {/* Pipeline Shortage Success State */}
-          {pipelineShortageMitigated && pipelineGap === 0 && (
+        )}
+        
+        {/* Pipeline Shortage Success State */}
+        {pipelineShortageMitigated && pipelineGap === 0 && (
             <motion.div
               key="pipeline-shortage-success"
               initial={{ opacity: 0, height: 0 }}
@@ -1634,47 +1581,33 @@ function Screen3Body({
                 ✅ 3x Prospecting Agents deployed. Pipeline gap resolved.
               </div>
             </motion.div>
-          )}
-          
-          {/* Multi-Tier Mitigation Alerts */}
-          {currentMitigationTier === 'tier2' && (
+        )}
+        
+        {/* COMPACT WARNING BOX */}
+        {currentMitigationTier === 'tier2' && (
             <motion.div
               key="tier2-alert"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="mt-3 p-3 rounded-lg border"
-              style={{ 
-                backgroundColor: "#FEF3C7",
-                borderColor: "#F59E0B",
-              }}
+              className="bg-amber-50 border border-amber-200/60 rounded-lg p-3 flex items-center justify-between"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <div className="text-sm font-semibold mb-1" style={{ color: "#92400E" }}>
-                    ⚠️ Admin Overload Risk
-                  </div>
-                  <div className="text-xs mb-2" style={{ color: "#78350F" }}>
-                    Recommendation: Deploy Sequence Agents to automate routine follow-ups.
-                  </div>
-                  <div className="text-xs font-medium" style={{ color: "#78350F" }}>
-                    System Confidence: 88%
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAutomateFollowups}
-                  className="px-3 py-1.5 rounded text-xs font-semibold transition-colors border border-transparent hover:border-[#92400E] hover:bg-[#FDE68A] bg-white whitespace-nowrap"
-                  style={{ color: "#92400E" }}
-                >
-                  Automate Follow-ups
-                </button>
+              <div className="flex gap-2 items-center">
+                <span className="text-amber-500 text-[12px]">⚠️</span>
+                <span className="text-[12px] font-bold text-amber-900">Admin Overload Risk</span>
               </div>
+              <button
+                type="button"
+                onClick={handleAutomateFollowups}
+                className="px-2.5 py-1 bg-white border border-amber-200 rounded text-[10px] font-bold text-amber-700 hover:bg-amber-100 shadow-sm"
+              >
+                Automate
+              </button>
             </motion.div>
-          )}
-          
-          {currentMitigationTier === 'tier3' && (
+        )}
+        
+        {currentMitigationTier === 'tier3' && (
             <motion.div
               key="tier3-alert"
               initial={{ opacity: 0, height: 0 }}
@@ -1709,10 +1642,10 @@ function Screen3Body({
                 </button>
               </div>
             </motion.div>
-          )}
-          
-          {/* Advanced View - Conditionally Visible */}
-          <motion.div
+        )}
+        
+        {/* Advanced View - Conditionally Visible */}
+        <motion.div
             initial={false}
             animate={{ height: isAdvancedMode ? "auto" : 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
@@ -1799,18 +1732,17 @@ function Screen3Body({
             </div>
           </motion.div>
         </div>
-      </div>
 
-      {/* Side-by-Side CTAs - Left-aligned */}
+      {/* 6. COMPACT ACTIONS */}
       {!isDisabled && (
-        <div className="flex items-center justify-start gap-3 mt-4">
-          <SlackButton onClick={onApprove}>
-            Approve ${targetK.toLocaleString()}K Plan →
-          </SlackButton>
+        <div className="flex gap-2">
+          <button onClick={onApprove} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-[13px] font-bold hover:bg-blue-700 shadow-sm flex items-center justify-center gap-1.5">
+            Approve {`$${targetK.toLocaleString()}K`}
+          </button>
           {onExecuteInMessages && (
-            <SlackButton onClick={onExecuteInMessages}>
-              Execute Plan in Messages
-            </SlackButton>
+            <button onClick={onExecuteInMessages} className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-[13px] font-bold hover:bg-gray-50 shadow-sm">
+              Execute in Messages
+            </button>
           )}
         </div>
       )}
@@ -2459,9 +2391,7 @@ export function Arc1AgentforcePanel({
 
       {/* Body - Conditional rendering based on activeTab */}
       <div 
-        ref={(el) => {
-          scrollContainerRef.current = el;
-        }}
+        ref={scrollContainerRef}
         className="flex-1 overflow-y-auto min-h-0"
         style={{ backgroundColor: "#ffffff", borderTop: "none" }}
       >
@@ -2520,9 +2450,7 @@ export function Arc1AgentforcePanel({
                     return (
                       <div
                         key={item.id}
-                        ref={(el) => {
-                          confirmationChecklistRef.current = el;
-                        }}
+                        ref={confirmationChecklistRef}
                         className="pb-6"
                       >
                         <Screen4Body 
@@ -2537,9 +2465,7 @@ export function Arc1AgentforcePanel({
                     return (
                       <div
                         key={item.id}
-                        ref={(el) => {
-                          nextStepsRef.current = el;
-                        }}
+                        ref={nextStepsRef}
                         data-next-steps
                         className="pb-6"
                       >

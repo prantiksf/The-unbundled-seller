@@ -19,6 +19,9 @@ export function PresenterDock({ currentScene, onSceneChange, isStructural = fals
 
   const enabledScenes = SCENES.filter((s) => s.enabled && !s.isHero);
   const currentSceneData = SCENES.find((s) => s.id === currentScene);
+  const handleDockSceneChange = (targetScene: number, _source: string) => {
+    onSceneChange(targetScene);
+  };
 
   // Structural rendering (for prototype views) - ALWAYS visible, NO hover-to-reveal logic
   if (isStructural) {
@@ -36,7 +39,7 @@ export function PresenterDock({ currentScene, onSceneChange, isStructural = fals
         <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/5 flex-shrink-0">
           <button
             type="button"
-            onClick={() => onSceneChange(0)}
+            onClick={() => handleDockSceneChange(0, "structural-home-icon")}
             onMouseEnter={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               const navContainer = e.currentTarget.closest('nav') as HTMLElement;
@@ -57,7 +60,7 @@ export function PresenterDock({ currentScene, onSceneChange, isStructural = fals
             <button
               key={scene.id}
               type="button"
-              onClick={() => onSceneChange(scene.id)}
+              onClick={() => handleDockSceneChange(scene.id, "structural-scene-button")}
               onMouseEnter={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const navContainer = e.currentTarget.closest('nav') as HTMLElement;
@@ -104,7 +107,7 @@ export function PresenterDock({ currentScene, onSceneChange, isStructural = fals
 
         {/* Right Side: Home */}
         <button 
-          onClick={() => onSceneChange(0)} 
+          onClick={() => handleDockSceneChange(0, "structural-home-text")} 
           className="text-[10px] tracking-widest text-gray-400 hover:text-white uppercase font-bold transition-colors select-none outline-none flex-shrink-0 whitespace-nowrap"
         >
           Home
@@ -151,7 +154,7 @@ export function PresenterDock({ currentScene, onSceneChange, isStructural = fals
         <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/5 flex-shrink-0">
           <button
             type="button"
-            onClick={() => onSceneChange(0)}
+            onClick={() => handleDockSceneChange(0, "overlay-home-icon")}
             onMouseEnter={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               const navContainer = e.currentTarget.closest('nav') as HTMLElement;
@@ -172,7 +175,7 @@ export function PresenterDock({ currentScene, onSceneChange, isStructural = fals
             <button
               key={scene.id}
               type="button"
-              onClick={() => onSceneChange(scene.id)}
+              onClick={() => handleDockSceneChange(scene.id, "overlay-scene-button")}
               onMouseEnter={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const navContainer = e.currentTarget.closest('nav') as HTMLElement;
@@ -219,7 +222,7 @@ export function PresenterDock({ currentScene, onSceneChange, isStructural = fals
 
         {/* Right Side: Home */}
         <button 
-          onClick={() => onSceneChange(0)} 
+          onClick={() => handleDockSceneChange(0, "overlay-home-text")} 
           className="text-[10px] tracking-widest text-gray-400 hover:text-white uppercase font-bold transition-colors select-none outline-none flex-shrink-0 whitespace-nowrap"
         >
           Home

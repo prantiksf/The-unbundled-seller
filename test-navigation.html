@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: #0a0a0a;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 8px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            background: #0047FF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056FF;
+        }
+        #log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #000;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #0047FF;
+            padding-left: 10px;
+        }
+        .error {
+            border-left-color: #ff4444;
+            color: #ff4444;
+        }
+        .success {
+            border-left-color: #44ff44;
+            color: #44ff44;
+        }
+    </style>
+</head>
+<body>
+    <h1>Navigation Test for localhost:3000</h1>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <p>This page will help test the navigation on localhost:3000</p>
+        <ol>
+            <li>Click "Open App" to open localhost:3000 in a new window</li>
+            <li>Manually test clicking Home, Arc 2, and Arc 4 buttons</li>
+            <li>Check if the UI changes scenes</li>
+            <li>Open browser DevTools (F12) to check for console errors</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Actions</h2>
+        <button onclick="openApp()">Open App (localhost:3000)</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Manual Test Checklist</h2>
+        <div style="margin: 10px 0;">
+            <input type="checkbox" id="check1"> <label for="check1">App loaded successfully</label><br>
+            <input type="checkbox" id="check2"> <label for="check2">Home button is visible in top nav</label><br>
+            <input type="checkbox" id="check3"> <label for="check3">Arc number buttons (1-6) are visible</label><br>
+            <input type="checkbox" id="check4"> <label for="check4">Clicked Home button - UI changed to home scene</label><br>
+            <input type="checkbox" id="check5"> <label for="check5">Clicked Arc 2 button - UI changed to Arc 2 scene</label><br>
+            <input type="checkbox" id="check6"> <label for="check6">Clicked Arc 4 button - UI changed to Arc 4 scene</label><br>
+            <input type="checkbox" id="check7"> <label for="check7">No console errors observed</label><br>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Log</h2>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            log('Log cleared', 'info');
+        }
+
+        function openApp() {
+            log('Opening localhost:3000 in new window...', 'info');
+            const appWindow = window.open('http://localhost:3000', '_blank');
+            if (appWindow) {
+                log('App window opened successfully', 'success');
+                log('Please manually test the navigation buttons', 'info');
+            } else {
+                log('Failed to open window - popup blocked?', 'error');
+            }
+        }
+
+        // Initial log
+        log('Test page loaded. Ready to test.', 'success');
+    </script>
+</body>
+</html>

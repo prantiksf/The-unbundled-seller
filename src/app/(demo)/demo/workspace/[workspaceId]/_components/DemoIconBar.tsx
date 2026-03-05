@@ -12,22 +12,20 @@ import {
   IconBot,
   IconMore,
   IconPlus,
-  IconHashtag,
 } from "@/components/icons";
 import { Sun, BarChart3 } from "lucide-react";
 import { useDemoData, getAvatarUrl, type DemoDM, type DemoFile, type DemoSavedItem } from "@/context/DemoDataContext";
-import { useNav, usePresentationMode, useDemoContext } from "../_context/demo-layout-context";
+import { useNav, usePresentationMode, useDemoContext, type NavView } from "../_context/demo-layout-context";
 import { cn } from "@/lib/utils";
 import { SLACK_TOKENS } from "@/design/slack-tokens";
 
 const T = SLACK_TOKENS;
 
-const navItems = [
+const baseNavItems = [
   { icon: Sun,         label: "Today",      id: "today"      as const, href: "/today" },
   { icon: IconHome,    label: "Home",       id: "home"       as const, href: "/activity" },
   { icon: IconMessage, label: "DMs",        id: "dms"        as const, href: "/dms" },
   { icon: IconBell,    label: "Activity",   id: "activity"   as const, badge: 18, href: "/activity" },
-  { icon: BarChart3,   label: "Sales",      id: "sales"      as const, href: "/sales" },
   { icon: IconFolder,  label: "Files",      id: "files"      as const, href: "/files" },
   { icon: IconBookmark,label: "Later",      id: "later"      as const, href: "/later" },
   { icon: IconBot,     label: "Agentforce", id: "agentforce" as const, href: "/agentforce" },
@@ -375,24 +373,30 @@ function MoreOverlay() {
 
 interface DemoIconBarProps {
   onPrimaryNavChange?: (nav: "activity" | "dms") => void;
+  /** Fires for every nav item click — the Shell uses this to update its internal nav state. */
+  onNavChange?: (nav: NavView) => void;
   showDMBadge?: boolean;
 }
 
-export function DemoIconBar({ onPrimaryNavChange, showDMBadge = false }: DemoIconBarProps = {}) {
+export function DemoIconBar({ onPrimaryNavChange, onNavChange, showDMBadge = false }: DemoIconBarProps = {}) {
   const params = useParams();
   const workspaceId = (params.workspaceId as string) || "demo-1";
   const base = `/demo/workspace/${workspaceId}`;
   const { activeNav, setActiveNav } = useNav();
   const { isPresentationMode } = usePresentationMode();
   const { demoContext } = useDemoContext();
+  const navItems = demoContext === "N2A2"
+    ? [
+        ...baseNavItems.slice(0, 4),
+        { icon: BarChart3, label: "Sales", id: "sales" as const, href: "/sales" },
+        ...baseNavItems.slice(4),
+      ]
+    : baseNavItems;
 
   const { dms, files, savedItems, getChannelPreview } = useDemoData();
 
-  // STRICT NARRATIVE ISOLATION: Filter out Slackbot (Seller Edge) DM unless in N1A1 or N2A1
-  const shouldShowSlackbot = demoContext === 'N1A1' || demoContext === 'N2A1';
-  const filteredDms = shouldShowSlackbot 
-    ? dms 
-    : dms.filter((dm) => !dm.isSlackbot);
+  // Global icon bar: Always filter out Slackbot DM (Seller Edge is Arc 1 specific)
+  const filteredDms = dms.filter((dm) => !dm.isSlackbot);
 
   // Flyout overlay state
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -426,8 +430,14 @@ export function DemoIconBar({ onPrimaryNavChange, showDMBadge = false }: DemoIco
         style={{ backgroundColor: T.colors.globalBg }}
       >
         {/* Logo */}
-        <div className="mb-4 flex items-center justify-center" style={{ color: T.colors.themeSurface }}>
-          <IconHashtag width={T.iconSizes.logo} height={T.iconSizes.logo} strokeWidth={2} />
+        <div className="mb-4 flex items-center justify-center shrink-0" style={{ width: '32px', height: '32px' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/Salesforce.png"
+            alt="Salesforce"
+            className="object-contain shrink-0"
+            style={{ maxWidth: '32px', maxHeight: '32px', width: '32px', height: '32px', display: 'block' }}
+          />
         </div>
 
         {navItems.map((item) => {
@@ -435,8 +445,8 @@ export function DemoIconBar({ onPrimaryNavChange, showDMBadge = false }: DemoIco
           const href = base + item.href;
           const isActive = activeNav === item.id;
           const isHovered = hoveredId === item.id;
-          const showBadge = item.id === "dms" ? showDMBadge : item.badge !== undefined;
-          const badgeVal  = item.id === "dms" && showDMBadge ? 1 : item.badge;
+          const showBadge = item.id === "dms" ? showDMBadge : ('badge' in item && item.badge !== undefined);
+          const badgeVal  = item.id === "dms" && showDMBadge ? 1 : ('badge' in item ? item.badge : undefined);
 
           return (
             <div
@@ -461,6 +471,8 @@ export function DemoIconBar({ onPrimaryNavChange, showDMBadge = false }: DemoIco
                 href={href}
                 onClick={(e) => {
                   setActiveNav(item.id);
+                  // Fire onNavChange for ALL nav items so the Shell + Concept can react
+                  onNavChange?.(item.id);
                   if (onPrimaryNavChange && (item.id === "activity" || item.id === "dms")) {
                     onPrimaryNavChange(item.id);
                   }

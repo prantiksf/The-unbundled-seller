@@ -119,7 +119,7 @@ const ACTIVITY_ITEMS: ActivityItem[] = [
     avatarBadge: "🙏",
     action: "Reacted in DM",
     channel: "Direct Message",
-    channelId: "slackbot",
+    channelId: "shweta-humnabadkar",
     time: "23 mins",
     reactionPill: "🙏 1",
     preview: (
@@ -145,41 +145,7 @@ const ACTIVITY_ITEMS: ActivityItem[] = [
     ],
   },
 
-  /* ── 4. Slackbot — thread reply (read) ─────────────────────────────────── */
-  {
-    id: "act-slackbot",
-    user: "Slackbot",
-    avatarUrl: "/slackbot-logo.svg",
-    avatarBadge: "💬",
-    action: "Thread",
-    channel: "#slackbot",
-    channelId: "slackbot",
-    time: "30 mins",
-    preview: "I'll help you find your incomplete action items and threads needing follow-up…",
-    fullContext: [
-      {
-        sender: "Rita Patel",
-        avatarUrl: RITA_AVATAR,
-        time: "Today at 8:05 AM",
-        text: "Can you look through my activity threads from the last 7 days and find: 1. Action items from me that I haven't completed, 2. Threads I need to follow up on.",
-      },
-      {
-        sender: "Slackbot",
-        avatarUrl: "/slackbot-logo.svg",
-        time: "Today at 8:06 AM",
-        text: "I'll help you review your recent activity threads to find incomplete action items and threads needing follow-up!",
-        isHighlighted: true,
-      },
-      {
-        sender: "Slackbot",
-        avatarUrl: "/slackbot-logo.svg",
-        time: "Today at 8:07 AM",
-        text: "Found 2 items:\n\n#deal-sporty — You asked Sarah Chen for a POC update on Tuesday. She hasn't replied yet.\n\n#deal-novacorp — Priya requested MSA confirmation. You reacted 👀 but haven't sent the document.",
-      },
-    ],
-  },
-
-  /* ── 5. Reed Strauss — post in #ai-club (unread, 3 replies) ────────────── */
+  /* ── 4. Reed Strauss — post in #ai-club (unread, 3 replies) ────────────── */
   {
     id: "act-reed",
     user: "Reed Strauss",
@@ -297,7 +263,7 @@ const ACTIVITY_ITEMS: ActivityItem[] = [
     avatarBadge: "💬",
     action: "DM",
     channel: "Direct Message",
-    channelId: "slackbot",
+    channelId: "anika-rao",
     time: "1h ago",
     unread: true,
     replyCount: 2,
@@ -435,7 +401,7 @@ const ACTIVITY_ITEMS: ActivityItem[] = [
     avatarBadge: "💬",
     action: "DM",
     channel: "Direct Message",
-    channelId: "slackbot",
+    channelId: "marcus-lee",
     time: "4h ago",
     preview: "Hey — just got off the phone with NovaCorp's procurement. They're ready to move if we can turn the MSA around by Thursday.",
     fullContext: [
@@ -461,7 +427,8 @@ function Avatar({ src, name, size = 8 }: { src: string; name: string; size?: num
   const [avatarError, setAvatarError] = React.useState(false);
   const [avatarSrc, setAvatarSrc] = React.useState(src);
 
-  const handleError = () => {
+  const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const img = e.target as HTMLImageElement;
     if (!avatarError) {
       setAvatarError(true);
       setAvatarSrc(generateInitialsAvatar(name, size * 4));
@@ -541,6 +508,7 @@ const RICH_MESSAGES: Record<string, Array<{
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function SlackActivityView() {
+  const instanceIdRef = React.useRef(`activity-${Math.random().toString(36).slice(2, 8)}`);
   const [activeId, setActiveId] = useState(ACTIVITY_ITEMS[0].id);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [readIds, setReadIds] = useState<Set<string>>(() => new Set());
@@ -574,6 +542,9 @@ export function SlackActivityView() {
   
   const activeItem = ACTIVITY_ITEMS.find((a) => a.id === activeId)!;
 
+  React.useEffect(() => {
+  }, []);
+
   // Update messages when activeId changes
   React.useEffect(() => {
     const richMessages = RICH_MESSAGES[activeId];
@@ -599,7 +570,9 @@ export function SlackActivityView() {
       name: "Rita Patel",
       avatar: RITA_AVATAR,
       time: "Just now",
-      text: text
+      text: text,
+      reactions: [],
+      replies: { count: 0, avatars: [], lastTime: "" }
     };
     setMessages([...messages, newMessage]);
   };
@@ -695,6 +668,9 @@ export function SlackActivityView() {
                         src={item.avatarUrl}
                         alt={item.user}
                         className="w-10 h-10 rounded-lg border border-gray-100 object-cover"
+                        onLoad={(e) => {
+                          const target = e.target as HTMLImageElement;
+                        }}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           if (!target.src.startsWith('data:')) {

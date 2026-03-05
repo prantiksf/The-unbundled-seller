@@ -62,7 +62,7 @@ function DashboardGrid() {
           avgCycle={48}
           fastestClose={21}
           fastestDeal="Greentech"
-          q4Deals={Q4_DEALS_DATA}
+          q4Deals={[...Q4_DEALS_DATA]}
           index={3}
         />
       </div>

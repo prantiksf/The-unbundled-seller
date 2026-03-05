@@ -128,11 +128,11 @@ export function SlackAppShell({
     />
   );
 
-  const isArc1Context = demoContext === "N2A1";
+  const isQuarantinedContext = demoContext === "N2A2";
   const resolvedContent =
-    !isArc1Context && activeNavId === "files" ? <GlobalFilesView /> :
-    !isArc1Context && activeNavId === "later" ? <GlobalLaterView /> :
-    !isArc1Context && activeNavId === "agentforce" ? <GlobalAgentforceView /> :
+    !isQuarantinedContext && activeNavId === "files" ? <GlobalFilesView /> :
+    !isQuarantinedContext && activeNavId === "later" ? <GlobalLaterView /> :
+    !isQuarantinedContext && activeNavId === "agentforce" ? <GlobalAgentforceView /> :
     children;
 
   return (
@@ -275,14 +275,16 @@ export function SlackAppShell({
                   >
                     <div className="flex-1 min-w-0 min-h-0 h-full overflow-visible">
                       <div
-                        className="h-full min-h-0 overflow-hidden"
+                        className="h-full min-h-0 overflow-hidden bg-white"
                         style={{
                           borderRadius: 24,
                           boxShadow:
                             "-6px 0 24px -4px rgba(0, 0, 0, 0.2), -2px 0 10px -2px rgba(0, 0, 0, 0.15)",
                         }}
                       >
-                        {resolvedContent}
+                        <div className="h-full w-full bg-white">
+                          {resolvedContent}
+                        </div>
                       </div>
                     </div>
                   </ResizablePanel>
@@ -315,14 +317,16 @@ export function SlackAppShell({
               ) : (
                 <div className="flex-1 min-w-0 overflow-visible">
                   <div
-                    className="h-full overflow-hidden"
+                    className="h-full overflow-hidden bg-white"
                     style={{
                       borderRadius: 24,
                       boxShadow:
                         "-6px 0 24px -4px rgba(0, 0, 0, 0.2), -2px 0 10px -2px rgba(0, 0, 0, 0.15)",
                     }}
                   >
-                    {resolvedContent}
+                    <div className="h-full w-full bg-white">
+                      {resolvedContent}
+                    </div>
                   </div>
                 </div>
               )

@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { AnimatedCounter } from "./AnimatedCounter";
+import React, { useState } from "react";
 
 // Memory vault for progress bar segments (persists across remounts)
 const barMemoryVault: Record<string, number> = {};
@@ -30,270 +29,137 @@ interface QuotaTrackerProps {
 export function QuotaTracker({ pipeline, isFirstScene = false }: QuotaTrackerProps) {
   const { closed, inProgress, notStarted, lost, target } = pipeline;
   
-  // Animation state - if first scene, start from 0, otherwise use vault or current values
-  const [animatedClosed, setAnimatedClosed] = useState(() => {
-    if (isFirstScene) return 0;
-    const vaultValue = barMemoryVault['closed'];
-    return vaultValue !== undefined ? vaultValue : 0;
-  });
-  const [animatedLost, setAnimatedLost] = useState(() => {
-    if (isFirstScene) return 0;
-    const vaultValue = barMemoryVault['lost'];
-    return vaultValue !== undefined ? vaultValue : 0;
-  });
-  const [animatedInProgress, setAnimatedInProgress] = useState(() => {
-    if (isFirstScene) return 0;
-    const vaultValue = barMemoryVault['inProgress'];
-    return vaultValue !== undefined ? vaultValue : 0;
-  });
-  const [animatedNotStarted, setAnimatedNotStarted] = useState(() => {
-    if (isFirstScene) return 0;
-    const vaultValue = barMemoryVault['notStarted'];
-    return vaultValue !== undefined ? vaultValue : 100; // Default to 100% if no data
-  });
+  // Calculate pipeline metrics
+  const totalPipeline = closed + inProgress + notStarted + lost;
+  const winRate = totalPipeline > 0 ? Math.round((closed / (closed + lost)) * 100) : 52;
+  const closeRate = totalPipeline > 0 ? Math.round((closed / totalPipeline) * 100) : 68;
   
-  // Refs to track current animated values (updated on every state change)
-  const currentClosedRef = useRef(animatedClosed);
-  const currentLostRef = useRef(animatedLost);
-  const currentInProgressRef = useRef(animatedInProgress);
-  const currentNotStartedRef = useRef(animatedNotStarted);
-  
-  // Update refs whenever animated state changes
-  useEffect(() => {
-    currentClosedRef.current = animatedClosed;
-    currentLostRef.current = animatedLost;
-    currentInProgressRef.current = animatedInProgress;
-    currentNotStartedRef.current = animatedNotStarted;
-  }, [animatedClosed, animatedLost, animatedInProgress, animatedNotStarted]);
-  
-  // Fixed visual maximum scale ($1,000,000) to prevent overflow
-  const VISUAL_MAX = 1000000;
-  
-  // Calculate raw percentages relative to VISUAL_MAX
-  const closedPctRaw = (closed / VISUAL_MAX) * 100;
-  const lostPctRaw = (lost / VISUAL_MAX) * 100;
-  const inProgressPctRaw = (inProgress / VISUAL_MAX) * 100;
-  const notStartedPctRaw = (notStarted / VISUAL_MAX) * 100;
-  
-  // Calculate total to normalize to 100%
-  const totalPct = closedPctRaw + lostPctRaw + inProgressPctRaw + notStartedPctRaw;
-  
-  // Normalize percentages so they always add up to 100% (bar is always full)
-  const closedPct = totalPct > 0 ? (closedPctRaw / totalPct) * 100 : 0;
-  const lostPct = totalPct > 0 ? (lostPctRaw / totalPct) * 100 : 0;
-  const inProgressPct = totalPct > 0 ? (inProgressPctRaw / totalPct) * 100 : 0;
-  const notStartedPct = totalPct > 0 ? (notStartedPctRaw / totalPct) * 100 : 100; // Default to 100% if no data
-  
-  // Calculate quota percentage
-  const percentAchieved = Math.round((closed / target) * 100);
-  
-  // Track if this is the first render
-  const isFirstMount = useRef(true);
-  
-  useEffect(() => {
-    const duration = 1200; // ms
-    const startTime = Date.now();
-    
-    // If first scene, start from 0 for all segments
-    let startClosed = isFirstScene ? 0 : currentClosedRef.current;
-    let startLost = isFirstScene ? 0 : currentLostRef.current;
-    let startInProgress = isFirstScene ? 0 : currentInProgressRef.current;
-    let startNotStarted = isFirstScene ? 0 : currentNotStartedRef.current;
-    
-    // Update refs to match start values
-    if (isFirstScene) {
-      currentClosedRef.current = 0;
-      currentLostRef.current = 0;
-      currentInProgressRef.current = 0;
-      currentNotStartedRef.current = 0;
-    }
-    
-    const endClosed = closedPct;
-    const endLost = lostPct;
-    const endInProgress = inProgressPct;
-    const endNotStarted = notStartedPct;
-    
-    // Skip animation if values haven't changed significantly
-    if (Math.abs(startClosed - endClosed) < 0.01 && 
-        Math.abs(startLost - endLost) < 0.01 && 
-        Math.abs(startInProgress - endInProgress) < 0.01 && 
-        Math.abs(startNotStarted - endNotStarted) < 0.01) {
-      // Still set the final values even if skipping animation
-      if (isFirstScene) {
-        setAnimatedClosed(endClosed);
-        setAnimatedLost(endLost);
-        setAnimatedInProgress(endInProgress);
-        setAnimatedNotStarted(endNotStarted);
-      }
-      return;
-    }
-    
-    const animateAll = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      // Use ease-out for smooth natural animation
-      const easing = 1 - Math.pow(1 - progress, 3);
-      
-      // Animate segments smoothly
-      const currentClosed = Math.max(0, Math.min(100, startClosed + (endClosed - startClosed) * easing));
-      const currentLost = Math.max(0, Math.min(100, startLost + (endLost - startLost) * easing));
-      const currentInProgress = Math.max(0, Math.min(100, startInProgress + (endInProgress - startInProgress) * easing));
-      const currentNotStarted = Math.max(0, Math.min(100, startNotStarted + (endNotStarted - startNotStarted) * easing));
-      
-      setAnimatedClosed(currentClosed);
-      setAnimatedLost(currentLost);
-      setAnimatedInProgress(currentInProgress);
-      setAnimatedNotStarted(currentNotStarted);
-      
-      if (progress < 1) {
-        requestAnimationFrame(animateAll);
-      } else {
-        // Ensure final values are exact
-        setAnimatedClosed(endClosed);
-        setAnimatedLost(endLost);
-        setAnimatedInProgress(endInProgress);
-        setAnimatedNotStarted(endNotStarted);
-        
-        // Update memory vault for persistence
-        barMemoryVault['closed'] = endClosed;
-        barMemoryVault['lost'] = endLost;
-        barMemoryVault['inProgress'] = endInProgress;
-        barMemoryVault['notStarted'] = endNotStarted;
-      }
-    };
-    
-    // Start animation
-    requestAnimationFrame(animateAll);
-    
-    return () => {
-      // Cleanup handled by React
-    };
-  }, [closedPct, lostPct, inProgressPct, notStartedPct, isFirstScene]);
+  // Slider state - initialize from target or use default
+  const [sliderValue, setSliderValue] = useState(target || 545000);
+  const [advancedMode, setAdvancedMode] = useState(false);
+
+  // Formatting helpers
+  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+
+  // Calculate commission based on slider value (simplified calculation)
+  const estimatedCommission = Math.round(sliderValue * 0.14); // ~14% commission rate
+  const pipelineGap = Math.max(0, sliderValue - totalPipeline);
 
   return (
-    <div className="flex items-start gap-8 w-full pt-4 pb-6">
-      {/* Left: Stacked Bar */}
-      <div className="flex-1 flex flex-col gap-2 -mt-[4px]">
-        {/* Quota Impact Label */}
-        <div className="text-[10px] uppercase tracking-widest font-bold mb-2 mt-[2px]" style={{ color: "#181818" }}>
-          Quota Impact
+    <div className="flex flex-col w-full max-w-xl mx-auto bg-white p-5 rounded-2xl shadow-sm border border-gray-200 font-sans">
+      
+      {/* 1. COMPACT AI NUDGE */}
+      <div className="bg-gradient-to-r from-[#F0F4FF] to-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 mb-5 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0 border border-blue-100 text-sm">✨</div>
+          <div>
+            <h3 className="text-[13px] font-bold text-gray-900 leading-none">Optimal quota recommended: {formatCurrency(target * 1.23)}.</h3>
+            <p className="text-[12px] text-gray-500 mt-1 leading-none">Deploying 3 agents boosts win rate to 56.4%.</p>
+          </div>
         </div>
-        {/* Bar Container with Target Line */}
-        <div className="relative w-full h-[6px]">
-          {/* Fixed Capsule Background - Always full width */}
-          <div className="absolute inset-0 bg-slate-200/20 rounded-full"></div>
-          
-          {/* The Quota Target Line (50% of 1M = 500k) */}
-          <div className="absolute top-0 bottom-0 left-1/2 w-[2px] bg-slate-400 z-10"></div>
-          
-          {/* Segments Container - Always fills 100% of the bar */}
-          <div className="relative w-full h-full rounded-full overflow-hidden">
-            {/* Calculate positions - bar always fills 100% */}
-            {(() => {
-              const totalUsed = animatedClosed + animatedLost + animatedInProgress + animatedNotStarted;
-              const remainingPct = Math.max(0, 100 - totalUsed);
-              const startPos = animatedClosed;
-              const lostPos = animatedClosed + animatedLost;
-              const inProgressPos = animatedClosed + animatedLost + animatedInProgress;
-              const notStartedPos = animatedClosed + animatedLost + animatedInProgress + animatedNotStarted;
-              
-              return (
-                <>
-                  {/* 1. Closed Segment - Always render, even if 0 width */}
-                  <div
-                    className="absolute left-0 top-0 h-full bg-emerald-500 z-20"
-                    style={{ 
-                      width: `${Math.max(0, animatedClosed)}%`,
-                      opacity: animatedClosed > 0 ? 1 : 0,
-                      transition: 'width 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
-                      borderRadius: animatedClosed >= 100 ? '9999px' : '9999px 0 0 9999px',
-                      boxShadow: closed >= target ? '0 0 12px rgba(16,185,129,0.8)' : 'none'
-                    }}
-                  />
-                  
-                  {/* 2. Lost Segment - Always render */}
-                  <div
-                    className="absolute left-0 top-0 h-full bg-red-500/80 z-10"
-                    style={{ 
-                      left: `${startPos}%`,
-                      width: `${Math.max(0, animatedLost)}%`,
-                      opacity: animatedLost > 0 ? 1 : 0,
-                      transition: 'width 0.8s cubic-bezier(0.22, 1, 0.36, 1), left 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease'
-                    }}
-                  />
-                  
-                  {/* 3. In Progress Segment - Always render */}
-                  <div
-                    className="absolute left-0 top-0 h-full bg-blue-500/80 z-10"
-                    style={{ 
-                      left: `${lostPos}%`,
-                      width: `${Math.max(0, animatedInProgress)}%`,
-                      opacity: animatedInProgress > 0 ? 1 : 0,
-                      transition: 'width 0.8s cubic-bezier(0.22, 1, 0.36, 1), left 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease'
-                    }}
-                  />
-                  
-                  {/* 4. Not Started Segment - Always render */}
-                  <div
-                    className="absolute left-0 top-0 h-full bg-slate-400/60 z-10"
-                    style={{ 
-                      left: `${inProgressPos}%`,
-                      width: `${Math.max(0, animatedNotStarted)}%`,
-                      opacity: animatedNotStarted > 0 ? 1 : 0,
-                      transition: 'width 0.8s cubic-bezier(0.22, 1, 0.36, 1), left 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
-                      borderRadius: (notStartedPos >= 100 && startPos === 0) ? '9999px' : '0 9999px 9999px 0'
-                    }}
-                  />
-                  
-                  {/* 5. Remaining space filled with Not Started (ensures bar is always 100%) */}
-                  {remainingPct > 0 && (
-                    <div
-                      className="absolute left-0 top-0 h-full bg-slate-400/60 z-5"
-                      style={{ 
-                        left: `${notStartedPos}%`,
-                        width: `${remainingPct}%`,
-                        transition: 'width 0.8s cubic-bezier(0.22, 1, 0.36, 1), left 0.8s cubic-bezier(0.22, 1, 0.36, 1)',
-                        borderRadius: (notStartedPos === 0 && remainingPct >= 100) ? '9999px' : '0 9999px 9999px 0'
-                      }}
-                    />
-                  )}
-                </>
-              );
-            })()}
+        <button className="flex-shrink-0 ml-3 px-3 py-1.5 bg-white border border-gray-200 rounded-md text-[11px] font-bold text-blue-600 hover:border-blue-300 hover:text-blue-700 shadow-sm transition-all">
+          Apply
+        </button>
+      </div>
+
+      {/* 2. HEADER & CONTEXT */}
+      <div className="flex items-end justify-between mb-5">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg leading-none">📊</span>
+            <h1 className="text-[18px] font-black text-gray-900 tracking-tight leading-none">Q1 Planner</h1>
+          </div>
+          <p className="text-[12px] text-gray-500 font-medium mt-1.5">
+            Pipeline: <span className="text-gray-900 font-bold">{formatCurrency(totalPipeline)}</span> · Win Rate: <span className="text-gray-900 font-bold">{winRate}%</span> · Quota: <span className="text-gray-900 font-bold">{formatCurrency(target)}</span>
+          </p>
+        </div>
+        <div className="flex -space-x-1.5">
+          <div className="w-5 h-5 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[8px] font-bold text-blue-500 shadow-sm z-10">SF</div>
+          <div className="w-5 h-5 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[8px] font-bold text-purple-500 shadow-sm z-20">GO</div>
+          <div className="w-5 h-5 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[8px] font-bold text-red-500 shadow-sm z-30">GM</div>
+        </div>
+      </div>
+
+      {/* 3. SEGMENTED CONTROLS */}
+      <div className="flex bg-gray-100/80 p-1 rounded-lg mb-6">
+        <button className="flex-1 py-1.5 text-[12px] font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">Conservative</button>
+        <button className="flex-1 py-1.5 text-[12px] font-bold rounded-md bg-white text-gray-900 shadow-sm transition-all border border-gray-200/50">Quota</button>
+        <button className="flex-1 py-1.5 text-[12px] font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">Stretch</button>
+      </div>
+
+      {/* 4. PREMIUM CUSTOM SLIDER */}
+      <div className="mb-6 px-1">
+        <div className="flex items-end justify-between mb-3">
+          <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Confidence Slider</h4>
+          <div className="text-[28px] font-black text-gray-900 tracking-tight leading-none">
+            {formatCurrency(sliderValue)}
           </div>
         </div>
         
-        {/* Labels */}
-        <div className="flex items-center gap-4 text-[10px] tracking-widest uppercase font-bold">
-          <span className="flex items-center gap-1.5" style={{ color: '#10b981' }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            CLOSED
-          </span>
-          <span className="flex items-center gap-1.5" style={{ color: '#3b82f6' }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-            IN PROGRESS
-          </span>
-          <span className="flex items-center gap-1.5" style={{ color: '#64748b' }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-            NOT STARTED
-          </span>
-          <span className="flex items-center gap-1.5" style={{ color: '#ef4444' }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-            LOST
-          </span>
+        <div className="relative w-full h-6 flex items-center">
+          <input 
+            type="range" 
+            min="400000" 
+            max="800000" 
+            step="5000"
+            value={sliderValue}
+            onChange={(e) => setSliderValue(Number(e.target.value))}
+            className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer outline-none relative z-10 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-[4px] [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-[4px] [&::-moz-range-thumb]:border-blue-600 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md"
+            style={{
+              background: `linear-gradient(to right, #2563EB 0%, #2563EB ${(sliderValue - 400000) / 4000}%, #E2E8F0 ${(sliderValue - 400000) / 4000}%, #E2E8F0 100%)`,
+            }}
+          />
         </div>
       </div>
 
-      {/* Right: Stats */}
-      <div className="text-right ml-8 min-w-[120px] flex-shrink-0">
-        <div className="text-4xl font-bold tracking-tight" style={{ color: "#181818", fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif", fontWeight: 700 }}>
-          <AnimatedCounter id="percent" value={percentAchieved} suffix="%" resetOnMount={isFirstScene} />
+      {/* 5. COMPACT IMPACT CARD */}
+      <div className="bg-[#F8FAFC] border border-gray-100 rounded-xl p-4 mb-5">
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200/60">
+          <h3 className="text-[12px] font-bold text-gray-800 uppercase tracking-wide">Plan Impact</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-gray-500 font-bold">Advanced</span>
+            <button onClick={() => setAdvancedMode(!advancedMode)} className={`w-8 h-4 rounded-full relative transition-colors duration-200 ${advancedMode ? 'bg-blue-600' : 'bg-gray-300'}`}>
+              <div className={`w-3 h-3 rounded-full bg-white absolute top-0.5 transition-transform duration-200 shadow-sm ${advancedMode ? 'left-4.5 translate-x-[14px]' : 'left-0.5'}`}></div>
+            </button>
+          </div>
         </div>
-        <div className="text-sm font-medium mt-1" style={{ color: "#64748b" }}>
-          <AnimatedCounter id="revenue" value={closed} prefix="$" stiffness={150} damping={35} resetOnMount={isFirstScene} /> / $500,000
+
+        <div className="space-y-2.5 mb-4">
+          <div className="flex items-end justify-between">
+            <span className="text-[13px] text-gray-600 font-medium">Estimated Commission</span>
+            <span className="text-[22px] font-black text-[#2BAC76] leading-none">{formatCurrency(estimatedCommission)}</span>
+          </div>
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[12px] text-gray-500">Pipeline gap to close</span>
+            <span className="text-[12px] font-bold text-gray-900">{pipelineGap === 0 ? "$0K" : `$${(pipelineGap / 1000).toFixed(0)}K`}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-gray-500">AI workload</span>
+            <span className="text-[12px] font-bold text-gray-900">High (1,009 tasks)</span>
+          </div>
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200/60 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex gap-2 items-center">
+            <span className="text-amber-500 text-[12px]">⚠️</span>
+            <span className="text-[12px] font-bold text-amber-900">Admin Overload Risk</span>
+          </div>
+          <button className="px-2.5 py-1 bg-white border border-amber-200 rounded text-[10px] font-bold text-amber-700 hover:bg-amber-100 shadow-sm">
+            Automate
+          </button>
         </div>
       </div>
+
+      {/* 6. COMPACT ACTIONS */}
+      <div className="flex gap-2">
+        <button className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-[13px] font-bold hover:bg-blue-700 shadow-sm flex items-center justify-center gap-1.5">
+          Approve {formatCurrency(sliderValue).replace('.00', '')}
+        </button>
+        <button className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-[13px] font-bold hover:bg-gray-50 shadow-sm">
+          Execute in Messages
+        </button>
+      </div>
+      
     </div>
   );
 }

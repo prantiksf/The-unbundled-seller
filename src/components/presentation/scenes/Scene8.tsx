@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ScenarioNarrative } from "../ScenarioNarrative";
-import { DesktopSlackShell } from "../DesktopSlackShell";
+import { SlackAppShell } from "../SlackAppShell";
+import type { NavView } from "@/app/(demo)/demo/workspace/[workspaceId]/_context/demo-layout-context";
 
 interface Scene8Props {
   onNext: () => void;
@@ -11,6 +12,7 @@ interface Scene8Props {
 
 export function Scene8({ onNext }: Scene8Props) {
   const [showPrototype, setShowPrototype] = useState(false);
+  const [activeNavId, setActiveNavId] = useState<NavView>("today");
 
   if (!showPrototype) {
     return (
@@ -39,10 +41,21 @@ export function Scene8({ onNext }: Scene8Props) {
         transition={{ duration: 0.3 }}
         className="h-full w-full"
       >
-        <DesktopSlackShell>
-          <div className="h-full w-full flex flex-col items-center justify-center p-8">
-          </div>
-        </DesktopSlackShell>
+        <SlackAppShell
+          activeNavId={activeNavId}
+          onNavChange={setActiveNavId}
+          showSidebar={activeNavId !== "today" && activeNavId !== "sales" && activeNavId !== "activity"}
+        >
+          {activeNavId === "home" && (
+            <div className="h-full w-full flex flex-col items-center justify-center p-8">
+            </div>
+          )}
+          {activeNavId !== "home" && activeNavId !== "today" && activeNavId !== "sales" && activeNavId !== "activity" && (
+            <div className="flex-1 flex items-center justify-center text-gray-400 bg-gray-50">
+              Content for {activeNavId} coming soon...
+            </div>
+          )}
+        </SlackAppShell>
       </motion.div>
     </AnimatePresence>
   );

@@ -518,7 +518,7 @@ export function ChatEngine({ channelId }: ChatEngineProps) {
             </>
           }
           icon={isChannel ? <span className="text-xl">#</span> : undefined}
-          memberCount={channel?.memberCount || 8455}
+          memberCount={(channel as any)?.memberCount || 8455}
           placeholder={`Message ${displayName}`}
           onSendMessage={handleSendMessage}
         >
