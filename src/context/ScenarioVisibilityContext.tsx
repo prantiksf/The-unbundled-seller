@@ -75,6 +75,12 @@ interface ScenarioVisibilityContextType {
   // Default narrative management
   defaultNarrative: string;
   setDefaultNarrative: (narrativeId: string) => void;
+  // Deprecated stamp management per arc
+  deprecatedArcIds: string[];
+  toggleDeprecatedStamp: (scenarioId: string) => void;
+  // Last reviewed date management per arc
+  lastReviewedDates: Record<string, string>;
+  setLastReviewedDate: (scenarioId: string, date: string) => void;
 }
 
 const ScenarioVisibilityContext = createContext<ScenarioVisibilityContextType | undefined>(undefined);
@@ -241,6 +247,64 @@ export function ScenarioVisibilityProvider({ children }: { children: ReactNode }
     leadership: NARRATIVE_ARC_MAP.leadership,
   });
 
+  // Store deprecated stamp state per arc (persists across narratives)
+  // Initialize with N2A3 (slack-jtbd-3) as deprecated by default
+  const [deprecatedArcIds, setDeprecatedArcIds] = useState<string[]>(['slack-jtbd-3']);
+
+  const toggleDeprecatedStamp = useCallback((scenarioId: string) => {
+    setDeprecatedArcIds((prev) => {
+      if (prev.includes(scenarioId)) {
+        return prev.filter((id) => id !== scenarioId);
+      } else {
+        return [...prev, scenarioId];
+      }
+    });
+  }, []);
+
+  // Store last reviewed dates per arc (persists across narratives)
+  // Initialize from metadata - read lastReviewedDate from arc payloads
+  const [lastReviewedDates, setLastReviewedDates] = useState<Record<string, string>>(() => {
+    // Initialize from metadata - check all arcs for lastReviewedDate
+    const initialDates: Record<string, string> = {};
+    // We'll populate this from metadata in useEffect
+    return initialDates;
+  });
+
+  // Initialize lastReviewedDates from metadata on mount and localStorage
+  useEffect(() => {
+    // First, try to load from localStorage
+    const storedDates = localStorage.getItem('lastReviewedDates');
+    const parsedDates: Record<string, string> = storedDates ? JSON.parse(storedDates) : {};
+    
+    // Then, merge with dates from metadata (metadata takes precedence if both exist)
+    import('@/config/demoMetadata').then(({ getMetadataForScene }) => {
+      const dates: Record<string, string> = { ...parsedDates };
+      scenarios.forEach(scenario => {
+        if (scenario.sceneId) {
+          const { arc: arcMeta } = getMetadataForScene(scenario.sceneId);
+          if (arcMeta?.payload?.lastReviewedDate) {
+            // Only use metadata date if not already in localStorage
+            if (!dates[scenario.id]) {
+              dates[scenario.id] = arcMeta.payload.lastReviewedDate;
+            }
+          }
+        }
+      });
+      setLastReviewedDates(dates);
+    });
+  }, [scenarios]);
+
+  // Save to localStorage whenever dates change
+  useEffect(() => {
+    if (Object.keys(lastReviewedDates).length > 0) {
+      localStorage.setItem('lastReviewedDates', JSON.stringify(lastReviewedDates));
+    }
+  }, [lastReviewedDates]);
+
+  const setLastReviewedDate = useCallback((scenarioId: string, date: string) => {
+    setLastReviewedDates((prev) => ({ ...prev, [scenarioId]: date }));
+  }, []);
+
   const narrativeOptions = Object.entries(NARRATIVE_LABELS).map(([id, label]) => ({ id, label }));
   // Use custom order if available, otherwise fall back to NARRATIVE_ARC_MAP
   const narrativeArcIds = arcOrderByNarrative[activeNarrative] || NARRATIVE_ARC_MAP[activeNarrative] || NARRATIVE_ARC_MAP.default;
@@ -338,6 +402,10 @@ export function ScenarioVisibilityProvider({ children }: { children: ReactNode }
         reorderArcs,
         defaultNarrative,
         setDefaultNarrative,
+        deprecatedArcIds,
+        toggleDeprecatedStamp,
+        lastReviewedDates,
+        setLastReviewedDate,
       }}
     >
       {children}

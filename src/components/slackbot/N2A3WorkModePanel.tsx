@@ -240,7 +240,7 @@ function ResearchAccordion({ prospect }: { prospect: PriorityProspect }) {
   );
 }
 
-interface WorkModePanelProps {
+interface N2A3WorkModePanelProps {
   onClose?: () => void;
   mode: "queue" | "single";
   activeProspectIndex: number;
@@ -249,14 +249,19 @@ interface WorkModePanelProps {
   onSendEmail: (prospect: PriorityProspect, emailContent: string) => void;
 }
 
-export function WorkModePanel({
+/**
+ * N2A3-specific Work Mode Panel component.
+ * This component includes ProspectIdentityBlock, ResearchAccordion, and Draft Email.
+ * Changes to this component should not affect N2A4.
+ */
+export function N2A3WorkModePanel({
   onClose,
   mode,
   activeProspectIndex,
   onNext,
   onPrevious,
   onSendEmail,
-}: WorkModePanelProps) {
+}: N2A3WorkModePanelProps) {
   const prospect = PRIORITY_PROSPECTS[activeProspectIndex];
   const [emailContent, setEmailContent] = useState(prospect?.draftEmail || "");
   const [recipientEmail, setRecipientEmail] = useState(prospect?.email || "");
@@ -301,7 +306,6 @@ export function WorkModePanel({
       let refinedContent = emailContent;
       
       if (refinement === "Make it shorter") {
-        // Create a shorter version by keeping key points
         const lines = emailContent.split('\n');
         const greeting = lines[0];
         const keyPoints = lines.filter(line => 
@@ -312,7 +316,6 @@ export function WorkModePanel({
         ).slice(0, 2);
         refinedContent = `${greeting}\n\n${keyPoints.join('\n')}\n\nBest,\nRita`;
       } else if (refinement === "More formal") {
-        // Make it more formal
         refinedContent = emailContent
           .replace(/Hi /g, "Dear ")
           .replace(/Best,/g, "Best regards,")
@@ -321,7 +324,6 @@ export function WorkModePanel({
           .replace(/you're/g, "you are")
           .replace(/we're/g, "we are");
       } else if (refinement === "Friendlier") {
-        // Make it friendlier
         refinedContent = emailContent
           .replace(/Dear /g, "Hi ")
           .replace(/Best regards,/g, "Best,")
@@ -329,10 +331,8 @@ export function WorkModePanel({
           .replace(/I would/g, "I'd")
           .replace(/you are/g, "you're")
           .replace(/we are/g, "we're");
-        // Add more casual language
         if (!refinedContent.includes('!')) {
           refinedContent = refinedContent.replace(/\./g, (match, offset) => {
-            // Add exclamation to first sentence if it's friendly
             if (offset < 100) return '!';
             return match;
           });
@@ -378,7 +378,6 @@ export function WorkModePanel({
   const isLastProspect = activeProspectIndex === PRIORITY_PROSPECTS.length - 1;
 
   const handleChatSubmit = (message: string) => {
-    // Handle chat messages if needed
     console.log("Chat message:", message);
   };
 
@@ -480,139 +479,139 @@ export function WorkModePanel({
 
             {/* Draft Email Header */}
             <div className="mb-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-sm font-bold text-gray-900">Draft Email</h3>
-                  <div className="flex items-center gap-1">
-                    {/* Sparkle Icon - Refinement Dropdown */}
-                    <div className="relative" ref={dropdownRef}>
-                      <button
-                        type="button"
-                        onClick={() => setShowRefinementDropdown(!showRefinementDropdown)}
-                        className={`p-1 rounded cursor-pointer transition-colors ${
-                          showRefinementDropdown 
-                            ? "bg-blue-50 text-blue-600" 
-                            : "hover:bg-gray-100 text-gray-500"
-                        }`}
-                        title="Refine with AI"
-                      >
-                        <Sparkles className="w-4 h-4" strokeWidth={2} />
-                      </button>
-                      {showRefinementDropdown && (
-                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 shadow-lg rounded-md py-1 w-40 z-10">
-                          <button
-                            type="button"
-                            onClick={() => handleRefinement("Make it shorter")}
-                            className="w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer text-left transition-colors"
-                          >
-                            Make it shorter
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRefinement("More formal")}
-                            className="w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer text-left transition-colors"
-                          >
-                            More formal
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRefinement("Friendlier")}
-                            className="w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer text-left transition-colors"
-                          >
-                            Friendlier
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    {/* Pencil Icon - Manual Edit Indicator */}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-bold text-gray-900">Draft Email</h3>
+                <div className="flex items-center gap-1">
+                  {/* Sparkle Icon - Refinement Dropdown */}
+                  <div className="relative" ref={dropdownRef}>
                     <button
                       type="button"
-                      className="p-1 hover:bg-gray-100 rounded text-gray-500 cursor-pointer transition-colors"
-                      title="Edit manually"
+                      onClick={() => setShowRefinementDropdown(!showRefinementDropdown)}
+                      className={`p-1 rounded cursor-pointer transition-colors ${
+                        showRefinementDropdown 
+                          ? "bg-blue-50 text-blue-600" 
+                          : "hover:bg-gray-100 text-gray-500"
+                      }`}
+                      title="Refine with AI"
                     >
-                      <IconPencil width={16} height={16} strokeWidth={2} />
+                      <Sparkles className="w-4 h-4" strokeWidth={2} />
                     </button>
+                    {showRefinementDropdown && (
+                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 shadow-lg rounded-md py-1 w-40 z-10">
+                        <button
+                          type="button"
+                          onClick={() => handleRefinement("Make it shorter")}
+                          className="w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer text-left transition-colors"
+                        >
+                          Make it shorter
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRefinement("More formal")}
+                          className="w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer text-left transition-colors"
+                        >
+                          More formal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRefinement("Friendlier")}
+                          className="w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer text-left transition-colors"
+                        >
+                          Friendlier
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-
-                {/* To Field */}
-                <div className="mb-2">
-                  <input
-                    type="email"
-                    value={recipientEmail}
-                    onChange={(e) => setRecipientEmail(e.target.value)}
-                    className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none text-gray-800"
-                    style={{
-                      backgroundColor: T.colors.background,
-                      fontFamily: T.typography.fontFamily,
-                    }}
-                    placeholder="recipient@example.com"
-                  />
-                </div>
-
-                {/* Subject Field */}
-                <div className="mb-3">
-                  <input
-                    type="text"
-                    value={emailSubject}
-                    onChange={(e) => setEmailSubject(e.target.value)}
-                    className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none text-gray-800"
-                    style={{
-                      backgroundColor: T.colors.background,
-                      fontFamily: T.typography.fontFamily,
-                    }}
-                    placeholder="Email subject"
-                  />
-                </div>
-
-                {/* Editable Text Area with Loading State */}
-                <div className="border border-gray-300 rounded-md p-3 min-h-[200px]">
-                  {isGenerating ? (
-                    // Shimmer Loading State
-                    <div className="space-y-2">
-                      <div className="animate-pulse bg-gray-200 h-4 rounded w-full"></div>
-                      <div className="animate-pulse bg-gray-200 h-4 rounded w-5/6"></div>
-                      <div className="animate-pulse bg-gray-200 h-4 rounded w-full"></div>
-                      <div className="animate-pulse bg-gray-200 h-4 rounded w-4/5"></div>
-                      <div className="animate-pulse bg-gray-200 h-4 rounded w-3/4"></div>
-                      <div className="animate-pulse bg-gray-200 h-4 rounded w-5/6 mt-2"></div>
-                    </div>
-                  ) : (
-                    <textarea
-                      value={emailContent}
-                      onChange={(e) => setEmailContent(e.target.value)}
-                      disabled={isGenerating}
-                      className="w-full min-h-[200px] resize-y text-sm text-gray-800 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed leading-normal"
-                      style={{
-                        backgroundColor: "transparent",
-                        fontFamily: T.typography.fontFamily,
-                        lineHeight: "1.5",
-                        caretColor: "#1d1c1d",
-                      }}
-                      placeholder="Email draft will appear here..."
-                    />
-                  )}
-                </div>
-
-                {/* Primary Action Bar */}
-                <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
+                  {/* Pencil Icon - Manual Edit Indicator */}
                   <button
                     type="button"
-                    onClick={handleSkip}
-                    disabled={isLastProspect}
-                    className="flex-1 bg-white border border-gray-300 text-gray-700 font-semibold py-1.5 px-3 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    className="p-1 hover:bg-gray-100 rounded text-gray-500 cursor-pointer transition-colors"
+                    title="Edit manually"
                   >
-                    Skip for now
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSendAndNext}
-                    className="flex-1 bg-[#007a5a] text-white font-semibold py-1.5 px-3 rounded-md hover:bg-[#148567] transition-colors text-sm"
-                  >
-                    Send & Next
+                    <IconPencil width={16} height={16} strokeWidth={2} />
                   </button>
                 </div>
               </div>
+
+              {/* To Field */}
+              <div className="mb-2">
+                <input
+                  type="email"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none text-gray-800"
+                  style={{
+                    backgroundColor: T.colors.background,
+                    fontFamily: T.typography.fontFamily,
+                  }}
+                  placeholder="recipient@example.com"
+                />
+              </div>
+
+              {/* Subject Field */}
+              <div className="mb-3">
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none text-gray-800"
+                  style={{
+                    backgroundColor: T.colors.background,
+                    fontFamily: T.typography.fontFamily,
+                  }}
+                  placeholder="Email subject"
+                />
+              </div>
+
+              {/* Editable Text Area with Loading State */}
+              <div className="border border-gray-300 rounded-md p-3 min-h-[200px]">
+                {isGenerating ? (
+                  // Shimmer Loading State
+                  <div className="space-y-2">
+                    <div className="animate-pulse bg-gray-200 h-4 rounded w-full"></div>
+                    <div className="animate-pulse bg-gray-200 h-4 rounded w-5/6"></div>
+                    <div className="animate-pulse bg-gray-200 h-4 rounded w-full"></div>
+                    <div className="animate-pulse bg-gray-200 h-4 rounded w-4/5"></div>
+                    <div className="animate-pulse bg-gray-200 h-4 rounded w-3/4"></div>
+                    <div className="animate-pulse bg-gray-200 h-4 rounded w-5/6 mt-2"></div>
+                  </div>
+                ) : (
+                  <textarea
+                    value={emailContent}
+                    onChange={(e) => setEmailContent(e.target.value)}
+                    disabled={isGenerating}
+                    className="w-full min-h-[200px] resize-y text-sm text-gray-800 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed leading-normal"
+                    style={{
+                      backgroundColor: "transparent",
+                      fontFamily: T.typography.fontFamily,
+                      lineHeight: "1.5",
+                      caretColor: "#1d1c1d",
+                    }}
+                    placeholder="Email draft will appear here..."
+                  />
+                )}
+              </div>
+
+              {/* Primary Action Bar */}
+              <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  disabled={isLastProspect}
+                  className="flex-1 bg-white border border-gray-300 text-gray-700 font-semibold py-1.5 px-3 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Skip for now
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendAndNext}
+                  className="flex-1 bg-[#007a5a] text-white font-semibold py-1.5 px-3 rounded-md hover:bg-[#148567] transition-colors text-sm"
+                >
+                  Send & Next
+                </button>
+              </div>
             </div>
+          </div>
         )}
         {(activeTab === "history" || activeTab === "files") && (
           <div className="p-4" style={{ fontSize: T.typography.small, color: T.colors.textSecondary }}>Coming soon.</div>

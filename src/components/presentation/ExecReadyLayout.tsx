@@ -24,7 +24,7 @@ export function ExecReadyLayout({ scene, onBack, onPrev, onNext }: ExecReadyLayo
   const [protoMountReady, setProtoMountReady] = useState(false);
   const [contentOpacity, setContentOpacity] = useState(1);
   const { isPrototypeMode, setIsPrototypeMode } = usePrototypeMode();
-  const { activeScenarios, getScenarioBySceneId } = useScenarioVisibility();
+  const { activeScenarios, getScenarioBySceneId, deprecatedArcIds, lastReviewedDates } = useScenarioVisibility();
 
   // Defer prototype content until after browser has laid out the fixed prototype zone
   useLayoutEffect(() => {
@@ -280,17 +280,69 @@ export function ExecReadyLayout({ scene, onBack, onPrev, onNext }: ExecReadyLayo
             <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10" />
           </div>
 
+          {/* Deprecated badge - check if current scene's arc is deprecated */}
+          {(() => {
+            const scenario = getScenarioBySceneId(scene.id);
+            return scenario && deprecatedArcIds.includes(scenario.id);
+          })() && (
+            <div 
+              className="absolute top-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center gap-3"
+              style={{ 
+                right: '120px',
+                transform: 'translateY(-50%)',
+                zIndex: 1000
+              }}
+            >
+              {/* Deprecated Badge - 150% bigger and 80% transparent */}
+              <div 
+                style={{ 
+                  transform: 'rotate(-5deg)',
+                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))',
+                }}
+              >
+                <div 
+                  className="w-80 h-80 rounded-full font-bold text-base uppercase tracking-wider flex items-center justify-center text-center"
+                  style={{
+                    backgroundColor: '#EF4444',
+                    color: '#FFFFFF',
+                    border: '6px solid #DC2626',
+                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.5)',
+                    fontWeight: 700,
+                    padding: '24px',
+                    opacity: 0.8,
+                  }}
+                >
+                  V1 : Deprecated
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 2. Content Overlay - Bottom Aligned */}
           <div className="relative z-20 w-full px-12 pb-16 md:px-20 md:pb-24 items-end">
             
             {/* Left Column: Narrative & Metrics */}
             <div className="w-auto">
-              {/* Eyebrow */}
-              <div className="flex items-center gap-4 mb-4 text-xs tracking-[0.2em] text-white/50 uppercase">
-                <span>Arc {arcNumber}</span>
-                <span className="px-3 py-1 border border-white/20 rounded-full text-[10px]">{deviceType}</span>
-              </div>
+              {/* Eyebrow - Removed arc number and badge */}
 
+              {/* Date before title - only show if deprecated and date exists */}
+              {(() => {
+                const scenario = getScenarioBySceneId(scene.id);
+                const isDeprecated = scenario && deprecatedArcIds.includes(scenario.id);
+                const dateFromState = scenario ? (lastReviewedDates?.[scenario.id] || '') : '';
+                const dateFromConfig = activeArcMeta?.payload?.lastReviewedDate || '';
+                const displayDate = dateFromState || dateFromConfig;
+                return isDeprecated && displayDate;
+              })() && (
+                <div className="text-xs text-white/60 mb-2 font-medium">
+                  Last reviewed {(() => {
+                    const scenario = getScenarioBySceneId(scene.id);
+                    const dateFromState = scenario ? (lastReviewedDates?.[scenario.id] || '') : '';
+                    const dateFromConfig = activeArcMeta?.payload?.lastReviewedDate || '';
+                    return dateFromState || dateFromConfig;
+                  })()}
+                </div>
+              )}
               {/* Headline */}
               <h2 className="text-5xl md:text-6xl font-medium leading-[1.1] tracking-tight text-white mb-4 max-w-4xl" style={{ fontFamily: "'Avant Garde for Salesforce', 'ITC Avant Garde Gothic', Montserrat, sans-serif" }}>
                 {activeArcMeta?.title || scene.jtbd || scene.name}

@@ -9,10 +9,21 @@ export interface PriorityProspect {
   email: string;
   context: string; // Previous engagement context
   draftEmail: string; // Pre-filled email draft
+  draftSubject?: string;
   step: string; // e.g., "BDR: High Touch"
   stepNumber: number; // Current step number
   totalSteps: number; // Total steps in workflow
   avatarUrl?: string; // Real photograph URL
+  /** Determines which action UI to render in the Slackbot panel */
+  actionType?: "email" | "agenda" | "contract";
+  /** Agenda builder: pre-filled meeting title */
+  meetingTitle?: string;
+  /** Agenda builder: pre-filled agenda body */
+  agendaContent?: string;
+  /** Contract review: clause label */
+  contractClause?: string;
+  /** Contract review: clause excerpt */
+  contractSnippet?: string;
 }
 
 export const PRIORITY_PROSPECTS: PriorityProspect[] = [
@@ -33,9 +44,10 @@ I've been following Cirrus's growth trajectory, and I believe our platform could
 
 Best,
 Rita`,
+    draftSubject: "Let's reconnect",
     step: "BDR: High Touch",
     stepNumber: 1,
-    totalSteps: 5,
+    totalSteps: 8,
   },
   {
     id: "prospect-2",
@@ -54,9 +66,10 @@ I'd love to reconnect and see how we might help Connected Innovations achieve si
 
 Best,
 Rita`,
+    draftSubject: "Agenda for our sync",
     step: "BDR: High Touch",
     stepNumber: 2,
-    totalSteps: 5,
+    totalSteps: 8,
   },
   {
     id: "prospect-3",
@@ -75,9 +88,10 @@ Would you be interested in a brief demo tailored to your current needs?
 
 Best,
 Rita`,
+    draftSubject: "Budget planning touchpoint",
     step: "BDR: High Touch",
     stepNumber: 3,
-    totalSteps: 5,
+    totalSteps: 8,
   },
   {
     id: "prospect-4",
@@ -96,9 +110,10 @@ Would you be open to a quick catch-up call to discuss what's new?
 
 Best,
 Rita`,
+    draftSubject: "Quick catch-up on expansion plans",
     step: "BDR: High Touch",
     stepNumber: 4,
-    totalSteps: 5,
+    totalSteps: 8,
   },
   {
     id: "prospect-5",
@@ -117,8 +132,75 @@ Would you be available for a brief call next week?
 
 Best,
 Rita`,
+    draftSubject: "Strategic planning sync",
     step: "BDR: High Touch",
     stepNumber: 5,
-    totalSteps: 5,
+    totalSteps: 8,
+  },
+  {
+    id: "prospect-6",
+    name: "Diane Park",
+    title: "CIO",
+    company: "Acme Corp",
+    signals: ["$60k ARR", "Stage 3"],
+    email: "diane.p@acme.com",
+    avatarUrl: "https://randomuser.me/api/portraits/med/women/21.jpg",
+    context: "Clause 7.2 in the MSA is blocking procurement and needs legal alignment this week.",
+    draftEmail: `Hi Diane,
+
+Great seeing you earlier. As discussed, I attached the standard non-compete addendum to address legal's concerns around clause 7.2.
+
+If this works on your end, we can move directly to provisioning this week.
+
+Best,
+Rita`,
+    draftSubject: "Following up on Clause 7.2",
+    step: "Contract Review",
+    stepNumber: 6,
+    totalSteps: 8,
+  },
+  {
+    id: "prospect-7",
+    name: "Liam Carter",
+    title: "Head of RevOps",
+    company: "Northstar Health",
+    signals: ["Meeting in 2h", "Expansion"],
+    email: "liam.carter@northstarhealth.com",
+    avatarUrl: "https://randomuser.me/api/portraits/med/men/64.jpg",
+    context: "Prep required for a 2 PM discovery on process bottlenecks and forecasting reliability.",
+    draftEmail: `Hi Liam,
+
+Looking forward to our 2 PM discovery session. I prepared a concise agenda around your RevOps workflow and forecasting pain points so we can make the best use of time.
+
+See you soon.
+
+Best,
+Rita`,
+    draftSubject: "Prep for our 2 PM session",
+    step: "Discovery Call Prep",
+    stepNumber: 7,
+    totalSteps: 8,
+  },
+  {
+    id: "prospect-8",
+    name: "Priya Shah",
+    title: "VP Procurement",
+    company: "Greentech",
+    signals: ["Top Opp", "Security Review"],
+    email: "priya.shah@greentech.com",
+    avatarUrl: "https://randomuser.me/api/portraits/med/women/33.jpg",
+    context: "Security and procurement checklist is pending final sign-off for a high-value opportunity.",
+    draftEmail: `Hi Priya,
+
+Thanks again for partnering with us through the security review. I shared the requested SOC documentation and compliance notes for your final checklist.
+
+Happy to jump on a quick call if it helps move this to sign-off.
+
+Best,
+Rita`,
+    draftSubject: "Security checklist follow-up",
+    step: "Top Opp Follow-up",
+    stepNumber: 8,
+    totalSteps: 8,
   },
 ];

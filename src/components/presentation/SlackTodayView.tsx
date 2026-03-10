@@ -661,9 +661,10 @@ function AgendaItem({
 interface SlackTodayViewProps {
   onNavigateToActivity?: () => void;
   topCard?: React.ReactNode; // Optional card to inject at the top of the left column
+  workModeToggle?: React.ReactNode; // Optional work mode toggle button
 }
 
-export function SlackTodayView({ onNavigateToActivity, topCard }: SlackTodayViewProps = {}) {
+export function SlackTodayView({ onNavigateToActivity, topCard, workModeToggle }: SlackTodayViewProps = {}) {
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
   const [showTomorrow, setShowTomorrow] = useState(false);
 
@@ -766,6 +767,7 @@ export function SlackTodayView({ onNavigateToActivity, topCard }: SlackTodayView
             <span className="text-sm text-gray-400">{today.date}</span>
           </div>
           <div className="flex items-center gap-2">
+            {workModeToggle}
             <button className="px-3 py-1 text-[12px] border border-gray-300 rounded-lg text-gray-600 hover:bg-white/70 transition-colors">
               Give Feedback
             </button>

@@ -69,6 +69,8 @@ export interface ArcPayloadConfig {
   onboarding?: OnboardingData;
   /** Optional presentation overrides for intro screens (N2 only) */
   presentationOverrides?: PresentationOverrides;
+  /** Optional last reviewed date for deprecated arcs (format: "dd/mm/yyyy") */
+  lastReviewedDate?: string;
 }
 
 /**
@@ -137,7 +139,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n1-a1',
         value: '1',
-        title: 'Arc 1: Quota Planning',
+        title: 'Quota Planning',
         description: 'Reviewing attainment.',
         payload: {
           defaultNavId: 'today',
@@ -148,7 +150,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n1-a2',
         value: '2',
-        title: 'Arc 2: Loss Recovery',
+        title: 'Loss Recovery',
         description: 'Recovering from a lost deal.',
         payload: {
           defaultNavId: 'today',
@@ -159,7 +161,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n1-a3',
         value: '3',
-        title: 'Arc 3: Sentiment Detection',
+        title: 'Sentiment Detection',
         description: 'Detecting and responding to deal sentiment.',
         payload: {
           defaultNavId: 'today',
@@ -170,7 +172,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n1-a4',
         value: '4',
-        title: 'Arc 4: Team Collaboration',
+        title: 'Team Collaboration',
         description: 'Working naturally with intelligence.',
         payload: {
           defaultNavId: 'today',
@@ -181,7 +183,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n1-a5',
         value: '5',
-        title: 'Arc 5: Autonomous Close',
+        title: 'Autonomous Close',
         description: 'The silent close.',
         payload: {
           defaultNavId: 'today',
@@ -192,7 +194,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n1-a6',
         value: '6',
-        title: 'Arc 6: Capacity Management',
+        title: 'Capacity Management',
         description: 'Managing seller capacity.',
         payload: {
           defaultNavId: 'today',
@@ -203,7 +205,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n1-a7',
         value: '7',
-        title: 'Arc 7: Multi-Surface Decisions',
+        title: 'Multi-Surface Decisions',
         description: 'Three decisions. Nine minutes.',
         payload: {
           defaultNavId: 'today',
@@ -214,7 +216,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n1-a8',
         value: '8',
-        title: 'Arc 8: Ambient CRM',
+        title: 'Ambient CRM',
         description: 'Five surfaces. Zero CRM navigations.',
         payload: {
           defaultNavId: 'today',
@@ -225,7 +227,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n1-a9',
         value: '9',
-        title: 'Arc 9: Zero-Touch Proof',
+        title: 'Zero-Touch Proof',
         description: 'Revenue up. Software time down.',
         payload: {
           defaultNavId: 'today',
@@ -236,7 +238,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n1-a10',
         value: '10',
-        title: 'Arc 10: Final Push',
+        title: 'Final Push',
         description: 'She was $47K short. She made the calls herself.',
         payload: {
           defaultNavId: 'today',
@@ -255,7 +257,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n2-a1',
         value: '1',
-        title: 'Arc 1: Zero-Day Value',
+        title: 'Zero-Day Value',
         description: 'No wizards. No setup. Instant execution.',
         payload: {
           defaultNavId: 'today',
@@ -287,7 +289,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n2-a2',
         value: '2',
-        title: 'Arc 2: Proactive Modeling',
+        title: 'Proactive Modeling',
         description: 'No spreadsheets. No guesswork. Instant commission visibility.',
         payload: {
           defaultNavId: 'today',
@@ -309,7 +311,31 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n2-a3',
         value: '3',
-        title: 'Arc 3: High-Velocity Execution',
+        title: 'High-Velocity Execution',
+        description: 'No context switching. No writer\'s block. Just pure pipeline generation.',
+        payload: {
+          defaultNavId: 'today',
+          sidebarDms: [],
+          lastReviewedDate: '02/03/2026',
+          presentationOverrides: {
+            hideQuotaSlider: true,
+            layoutStyle: 'breakthrough',
+            oldWorldTitle: "🔴 THE FRICTION",
+            oldWorldText: "Reps live in five tabs at once. To execute a cadence, they pull a Salesforce list, cross-reference LinkedIn for intent signals, hunt through past CRM notes for context, and stare at a blank draft in Gmail. It's 15 minutes of swivel-chair administration and data hunting just to send one quality, personalized outbound message.",
+            newWorldTitle: "🔵 THE BREAKTHROUGH",
+            newWorldText: "Slack opens. The 'Today' view presents a curated \"Priority Prospects\" queue. The rep clicks a single button: Start Work Mode. The Slackbot panel takes over, sequentially serving up deep account context alongside hyper-personalized, Agentforce-drafted emails. The rep reviews, tweaks, and clicks \"Send & Next.\" They clear their top 10 leads in 5 minutes without ever leaving Slack.",
+            heroMetric: {
+              old: "15 Mins",
+              new: "30 Seconds",
+              label: "TIME PER PERSONALIZED OUTREACH"
+            }
+          }
+        },
+      },
+      {
+        id: 'n2-a4',
+        value: '4',
+        title: 'High-Velocity Execution',
         description: 'No context switching. No writer\'s block. Just pure pipeline generation.',
         payload: {
           defaultNavId: 'today',
@@ -330,20 +356,9 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
         },
       },
       {
-        id: 'n2-a4',
-        value: '4',
-        title: 'Arc 4: Generic Shell',
-        description: 'Generic shell for N2A4.',
-        payload: {
-          defaultNavId: 'today',
-          sidebarDms: [],
-          botScriptId: undefined,
-        },
-      },
-      {
         id: 'n2-a5',
         value: '5',
-        title: 'Arc 5: Generic Shell',
+        title: 'Generic Shell',
         description: 'Generic shell for N2A5.',
         payload: {
           defaultNavId: 'today',
@@ -354,7 +369,7 @@ export const DEMO_METADATA: NarrativeMetadata[] = [
       {
         id: 'n2-a6',
         value: '6',
-        title: 'Arc 6: Generic Shell',
+        title: 'Generic Shell',
         description: 'Generic shell for N2A6.',
         payload: {
           defaultNavId: 'today',

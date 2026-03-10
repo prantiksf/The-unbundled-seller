@@ -5,6 +5,7 @@ import { usePresentationScene } from "@/context/PresentationSceneContext";
 import { usePrototypeMode } from "@/context/PrototypeModeContext";
 import { useArcNavigation } from "@/context/ArcNavigationContext";
 import { useScenarioVisibility } from "@/context/ScenarioVisibilityContext";
+import { getMetadataForScene } from "@/config/demoMetadata";
 import { SCENES } from "@/lib/presentation-data";
 import { useRouter } from "next/navigation";
 import { IconHome, IconSettings } from "@/components/icons";
@@ -110,13 +111,14 @@ export function GlobalNavigationHeader() {
     defaultNarrative,
     setDefaultNarrative,
     reorderArcs,
+    deprecatedArcIds,
+    toggleDeprecatedStamp,
+    lastReviewedDates,
+    setLastReviewedDate,
   } = useScenarioVisibility();
   const router = useRouter();
   const [hoveredScenarioIndex, setHoveredScenarioIndex] = useState<number | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // Drag and drop state
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -332,8 +334,8 @@ export function GlobalNavigationHeader() {
     // Set scene state - this should trigger re-render
     setCurrentScene(targetScene);
     
-    // Navigate to home route
-    router.push("/");
+    // Navigate to home route - always use replace to ensure navigation
+    router.replace("/");
   };
 
   // Get current active index from currentScene
@@ -563,7 +565,7 @@ export function GlobalNavigationHeader() {
           className="w-6 h-6 flex-shrink-0"
         />
         <span className="text-[10px] tracking-[0.2em] text-gray-500 uppercase font-medium whitespace-nowrap">
-          SlackbotPro <span className="mx-2 text-white/20">|</span> {context === "home" ? "SCENE 0" : currentArc ? `ARC ${currentArc} · ${currentDate}` : "SCENE 0"}
+          SlackbotPro {context !== "home" && currentDate && <><span className="mx-2 text-white/20">|</span> {currentDate}</>}
         </span>
       </div>
 
@@ -767,57 +769,26 @@ export function GlobalNavigationHeader() {
                   </div>
                   <div className="max-h-64 overflow-y-auto pr-2 pb-2 space-y-3">
                     {currentNarrativeData.map((arc, index) => {
-                      const isDragging = draggedIndex === index;
-                      const isDragOver = dragOverIndex === index;
+                      const isDeprecated = deprecatedArcIds.includes(arc.id);
+                      const lastReviewedDate = (lastReviewedDates && lastReviewedDates[arc.id]) || '';
+                      // Get date from metadata if not in state
+                      let dateFromMetadata = '';
+                      if (arc.sceneId) {
+                        try {
+                          const { arc: arcMeta } = getMetadataForScene(arc.sceneId);
+                          dateFromMetadata = arcMeta?.payload?.lastReviewedDate || '';
+                        } catch (e) {
+                          // Ignore errors
+                        }
+                      }
+                      const displayDate = lastReviewedDate || dateFromMetadata;
+                      
                       return (
                         <div
                           key={arc.id}
-                          draggable
-                          onDragStart={(e) => {
-                            setDraggedIndex(index);
-                            e.dataTransfer.effectAllowed = "move";
-                            e.dataTransfer.setData("text/html", arc.id);
-                          }}
-                          onDragOver={(e) => {
-                            e.preventDefault();
-                            e.dataTransfer.dropEffect = "move";
-                            setDragOverIndex(index);
-                          }}
-                          onDragLeave={() => {
-                            setDragOverIndex(null);
-                          }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            if (draggedIndex !== null && draggedIndex !== index) {
-                              reorderArcs(activeNarrative, draggedIndex, index);
-                            }
-                            setDraggedIndex(null);
-                            setDragOverIndex(null);
-                          }}
-                          onDragEnd={() => {
-                            setDraggedIndex(null);
-                            setDragOverIndex(null);
-                          }}
-                          className={`flex items-start gap-3 group p-2 rounded-lg transition-all ${
-                            isDragging ? "opacity-50 cursor-grabbing" : "cursor-grab"
-                          } ${
-                            isDragOver ? "bg-blue-500/20 border border-blue-500/50" : "hover:bg-gray-800/50"
-                          }`}
+                          className="flex items-start gap-3 group p-2 rounded-lg transition-all hover:bg-gray-800/50"
                         >
-                          {/* Gripper Icon */}
-                          <div className="mt-1 flex-shrink-0 text-gray-500 group-hover:text-gray-400 cursor-grab active:cursor-grabbing">
-                            <svg width="12" height="16" viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <circle cx="2" cy="2" r="1.5" fill="currentColor"/>
-                              <circle cx="2" cy="6" r="1.5" fill="currentColor"/>
-                              <circle cx="2" cy="10" r="1.5" fill="currentColor"/>
-                              <circle cx="2" cy="14" r="1.5" fill="currentColor"/>
-                              <circle cx="6" cy="2" r="1.5" fill="currentColor"/>
-                              <circle cx="6" cy="6" r="1.5" fill="currentColor"/>
-                              <circle cx="6" cy="10" r="1.5" fill="currentColor"/>
-                              <circle cx="6" cy="14" r="1.5" fill="currentColor"/>
-                            </svg>
-                          </div>
-                          {/* Checkbox */}
+                          {/* Visibility Checkbox */}
                           <input
                             type="checkbox"
                             checked={!hiddenArcIds.includes(arc.id)}
@@ -831,8 +802,54 @@ export function GlobalNavigationHeader() {
                           />
                           {/* Content */}
                           <div className="flex flex-col flex-1 min-w-0">
-                            <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">{arc.internalName}</span>
+                            {/* Arc name with inline date */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">{arc.internalName}</span>
+                              {/* Inline Last Reviewed - available for all arcs */}
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-gray-400">Last reviewed</span>
+                                <input
+                                  type="text"
+                                  value={displayDate}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    setLastReviewedDate(arc.id, e.target.value);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  placeholder="dd/mm/yyyy"
+                                  className="w-20 px-1.5 py-0.5 text-[10px] bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  style={{ minWidth: '70px' }}
+                                />
+                              </div>
+                            </div>
                             <span className="text-xs text-gray-500 leading-relaxed mt-0.5">{arc.description}</span>
+                          </div>
+                          {/* Deprecated Stamp Toggle */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-[10px] text-gray-400 uppercase tracking-wider whitespace-nowrap">Deprecated</span>
+                              {/* Toggle Switch */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleDeprecatedStamp(arc.id);
+                                }}
+                                className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
+                                  isDeprecated 
+                                    ? 'bg-red-600 border-2 border-red-600' 
+                                    : 'bg-gray-600 border-2 border-gray-500'
+                                }`}
+                                role="switch"
+                                aria-checked={isDeprecated}
+                              >
+                                <span
+                                  className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-all duration-200 ease-in-out ${
+                                    isDeprecated ? 'translate-x-4' : 'translate-x-0.5'
+                                  }`}
+                                />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );

@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { PriorityProspect } from "@/data/priorityProspects";
 
 interface ProspectRowProps {
   prospect: PriorityProspect;
   priority?: "hot" | "warm" | "cold"; // Priority level for the badge
+  isSelected?: boolean; // Whether this prospect is currently selected
+  compact?: boolean;
   onReviewDraft: (prospect: PriorityProspect) => void;
 }
 
@@ -56,10 +58,18 @@ function getBadgeColorStyles(signal: string, index: number): { backgroundColor: 
   return badgeColors[colorIndex];
 }
 
-export function ProspectRow({ prospect, priority = "warm", onReviewDraft }: ProspectRowProps) {
+export function ProspectRow({
+  prospect,
+  priority = "warm",
+  isSelected = false,
+  compact = false,
+  onReviewDraft,
+}: ProspectRowProps) {
   const initials = getInitials(prospect.name);
   const avatarColors = getAvatarColorClasses(prospect.name);
   const [avatarError, setAvatarError] = useState(false);
+  const [visibleBadgeCount, setVisibleBadgeCount] = useState<number | null>(null);
+  const badgeContainerRef = useRef<HTMLDivElement>(null);
 
   // Determine priority badge
   const priorityBadge = priority === "hot" ? "Hot 🔥" : null;
@@ -67,9 +77,85 @@ export function ProspectRow({ prospect, priority = "warm", onReviewDraft }: Pros
   // Get step text (e.g., "Step 5: Email")
   const stepText = `Step ${prospect.stepNumber}: Email`;
 
+  // Collect all badges (priority + signals)
+  const allBadges = [];
+  if (priorityBadge) {
+    allBadges.push({ text: priorityBadge, isPriority: true });
+  }
+  prospect.signals.forEach((signal) => {
+    allBadges.push({ text: signal, isPriority: false });
+  });
+
+  // Calculate visible badges based on container width
+  useEffect(() => {
+    if (compact) return;
+    if (!badgeContainerRef.current) return;
+
+    const calculateVisibleBadges = () => {
+      const container = badgeContainerRef.current;
+      if (!container) return;
+
+      const containerWidth = container.offsetWidth;
+      const badges = container.querySelectorAll('[data-badge]');
+      
+      if (badges.length === 0) {
+        // Initial render - show all badges first, then recalculate
+        setVisibleBadgeCount(allBadges.length);
+        return;
+      }
+
+      let visibleCount = 0;
+      let totalWidth = 0;
+      const gap = 8; // gap-2 = 8px
+      const overflowBadgeReserve = 50; // Reserve space for "+X" badge
+
+      // Measure each badge
+      badges.forEach((badge, index) => {
+        const badgeWidth = (badge as HTMLElement).offsetWidth;
+        const wouldFit = totalWidth + badgeWidth + (index > 0 ? gap : 0) <= containerWidth - overflowBadgeReserve;
+        
+        if (wouldFit || index === 0) {
+          totalWidth += badgeWidth + (index > 0 ? gap : 0);
+          visibleCount++;
+        }
+      });
+
+      setVisibleBadgeCount(visibleCount);
+    };
+
+    // Initial calculation
+    calculateVisibleBadges();
+
+    // Use ResizeObserver to recalculate on container resize
+    const resizeObserver = new ResizeObserver(() => {
+      calculateVisibleBadges();
+    });
+
+    if (badgeContainerRef.current) {
+      resizeObserver.observe(badgeContainerRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [allBadges.length, compact]);
+
+  const visibleBadges = visibleBadgeCount !== null 
+    ? allBadges.slice(0, visibleBadgeCount)
+    : allBadges;
+  const hiddenBadgeCount = allBadges.length - visibleBadges.length;
+
   return (
     <div
-      className="group flex flex-row items-start gap-4 p-4 border border-gray-100 rounded-lg relative hover:bg-gray-50 transition-colors cursor-pointer"
+      className={`group flex flex-row items-start gap-3 rounded-lg relative transition-colors cursor-pointer ${
+        compact
+          ? isSelected
+            ? "bg-blue-50 border border-blue-100 border-l-4 border-l-blue-600 py-3 px-4"
+            : "bg-white border border-transparent hover:bg-gray-50 py-3 px-4"
+          : isSelected
+            ? "bg-white border-2 border-blue-500 shadow-sm p-4"
+            : "bg-white border border-gray-100 hover:bg-gray-50 p-4"
+      }`}
       onClick={() => onReviewDraft(prospect)}
     >
       {/* Avatar - Real photograph with fallback */}
@@ -92,66 +178,81 @@ export function ProspectRow({ prospect, priority = "warm", onReviewDraft }: Pros
         </div>
       )}
 
-      {/* Content Stack - Three lines */}
-      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-        {/* Line 1: Name + Title/Company inline */}
-        <div className="flex items-center min-w-0 gap-2">
+      {/* Content Stack */}
+      <div className={`flex-1 min-w-0 flex flex-col ${compact ? "gap-1" : "gap-1.5"}`}>
+        {/* Line 1: Name (left) + Step (right) */}
+        <div className="flex items-center justify-between min-w-0 gap-2">
           <span className="text-gray-900 font-semibold text-sm flex-shrink-0">{prospect.name}</span>
-          <span className="text-gray-500 text-xs font-normal truncate min-w-0">
+          <span className="text-gray-500 text-xs whitespace-nowrap flex-shrink-0">{stepText}</span>
+        </div>
+
+        {/* Line 2: Job Role (Title · Company) */}
+        <div className="flex items-center min-w-0">
+          <span className="text-gray-500 text-xs font-normal">
             {prospect.title} · {prospect.company}
           </span>
         </div>
 
-        {/* Line 2: Badges & Step */}
-        <div className="flex items-center gap-2">
-          {priorityBadge && (
-            <span 
-              className="text-xs px-3 py-0.5 h-5 font-medium inline-flex items-center justify-center whitespace-nowrap"
-              style={{ 
-                borderRadius: '4px',
-                backgroundColor: '#FFEDBB',
-                color: '#AA7F1F'
-              }}
+        {!compact && (
+          <>
+            {/* Line 3: Badges (single line with overflow indicator) */}
+            <div
+              ref={badgeContainerRef}
+              className="flex items-center gap-2 overflow-hidden"
             >
-              {priorityBadge}
-            </span>
-          )}
-          {prospect.signals.map((signal, idx) => {
-            const badgeStyles = getBadgeColorStyles(signal, idx);
-            return (
-              <span
-                key={idx}
-                className="px-3 py-0.5 h-5 text-xs font-medium inline-flex items-center justify-center whitespace-nowrap"
-                style={{ 
-                  borderRadius: '4px',
-                  backgroundColor: badgeStyles.backgroundColor,
-                  color: badgeStyles.color
-                }}
-              >
-                {signal}
-              </span>
-            );
-          })}
-          <span className="text-gray-500 text-xs">{stepText}</span>
-        </div>
+              {/* Render all badges for measurement, but only show visible ones */}
+              {allBadges.map((badge, idx) => {
+                const badgeStyles = badge.isPriority
+                  ? { backgroundColor: "#FFEDBB", color: "#AA7F1F" }
+                  : getBadgeColorStyles(badge.text, idx);
+                const isVisible = visibleBadgeCount === null || idx < visibleBadgeCount;
 
-        {/* Line 3: AI Insight */}
-        <div className="flex items-start gap-1.5">
-          <span className="text-gray-700 text-xs flex-shrink-0">✨</span>
-          <span className="text-gray-700 text-xs truncate min-w-0">{prospect.context}</span>
-        </div>
+                return (
+                  <span
+                    key={idx}
+                    data-badge
+                    className={`px-3 py-0.5 h-5 text-xs font-medium inline-flex items-center justify-center whitespace-nowrap flex-shrink-0 ${!isVisible ? "invisible" : ""}`}
+                    style={{
+                      borderRadius: "4px",
+                      backgroundColor: badgeStyles.backgroundColor,
+                      color: badgeStyles.color,
+                    }}
+                  >
+                    {badge.text}
+                  </span>
+                );
+              })}
+              {hiddenBadgeCount > 0 && (
+                <span
+                  className="px-3 py-0.5 h-5 text-xs font-medium inline-flex items-center justify-center whitespace-nowrap flex-shrink-0 text-gray-500 bg-gray-100"
+                  style={{ borderRadius: "4px" }}
+                >
+                  +{hiddenBadgeCount}
+                </span>
+              )}
+            </div>
+
+            {/* Line 4: AI Insight (truncated to 2 lines) */}
+            <div className="flex items-start gap-1.5">
+              <span className="text-gray-700 text-xs flex-shrink-0">✨</span>
+              <span className="text-gray-700 text-xs min-w-0 line-clamp-2">{prospect.context}</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Hover Button - Review Draft (absolute positioned) */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onReviewDraft(prospect);
-        }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto border border-gray-300 bg-white text-gray-700 shadow-sm rounded-md px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-opacity"
-      >
-        Review Draft
-      </button>
+      {!compact && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onReviewDraft(prospect);
+          }}
+          className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto border border-gray-300 bg-white text-gray-700 shadow-sm rounded-md px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-opacity"
+        >
+          Review Draft
+        </button>
+      )}
     </div>
   );
 }

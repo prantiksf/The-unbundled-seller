@@ -7,6 +7,13 @@ const hasConvex = !!convexUrl && !convexUrl.includes("demo-disabled");
 
 export async function middleware(request: NextRequest, event: NextFetchEvent) {
   if (!hasConvex) {
+    const { pathname, search } = request.nextUrl;
+    if (pathname.startsWith("/workspace/")) {
+      const redirectedUrl = request.nextUrl.clone();
+      redirectedUrl.pathname = `/demo${pathname}`;
+      redirectedUrl.search = search;
+      return NextResponse.redirect(redirectedUrl);
+    }
     return NextResponse.next();
   }
 

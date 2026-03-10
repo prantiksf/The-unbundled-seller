@@ -71,6 +71,8 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
     activeScenarios,
     getScenarioBySceneId,
     presentationDensity,
+    deprecatedArcIds,
+    lastReviewedDates,
   } = useScenarioVisibility();
 
   // Defer prototype content until after browser has laid out the fixed prototype zone — fixes wrong layout on first "Enter scenario" click
@@ -223,8 +225,12 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
           // N2A3: Use SlackAppShellWrapper with Priority Prospects work mode
           const payload = activeArcMeta?.payload || { defaultNavId: 'today' as const, sidebarDms: [] };
           return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={payload} isN2A3={true} />;
-        } else if (scene.id >= 204 && scene.id <= 206) {
-          // N2A4-N2A6: Use generic SlackAppShellWrapper with arc payload
+        } else if (scene.id === 204) {
+          // N2A4: Use SlackAppShellWrapper with Priority Prospects work mode (copy of N2A3)
+          const payload = activeArcMeta?.payload || { defaultNavId: 'today' as const, sidebarDms: [] };
+          return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={payload} isN2A4={true} />;
+        } else if (scene.id >= 205 && scene.id <= 206) {
+          // N2A5-N2A6: Use generic SlackAppShellWrapper with arc payload
           // Ensure we always have a valid payload, fallback to default if metadata lookup fails
           const payload = activeArcMeta?.payload || { defaultNavId: 'today' as const, sidebarDms: [] };
           return <SlackAppShellWrapper defaultNav="today" hideHeader={false} arcPayload={payload} />;
@@ -375,15 +381,70 @@ export function SceneLayout({ scene, onBack, onPrev, onNext }: SceneLayoutProps)
             />
           </div>
 
+          {/* Deprecated badge - check if current scene's arc is deprecated */}
+          {(() => {
+            const scenario = getScenarioBySceneId(scene.id);
+            const isDeprecated = scenario && deprecatedArcIds.includes(scenario.id);
+            const lastReviewedDate = isDeprecated ? arcPayload?.lastReviewedDate : undefined;
+            return isDeprecated;
+          })() && (
+            <div 
+              className="absolute top-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center gap-3"
+              style={{ 
+                right: '120px',
+                transform: 'translateY(-50%)',
+                zIndex: 1000
+              }}
+            >
+              {/* Deprecated Badge - 150% bigger and 80% transparent */}
+              <div 
+                style={{ 
+                  transform: 'rotate(-5deg)',
+                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))',
+                }}
+              >
+                <div 
+                  className="w-80 h-80 rounded-full font-bold text-base uppercase tracking-wider flex items-center justify-center text-center"
+                  style={{
+                    backgroundColor: '#EF4444',
+                    color: '#FFFFFF',
+                    border: '6px solid #DC2626',
+                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.5)',
+                    fontWeight: 700,
+                    padding: '24px',
+                    opacity: 0.8,
+                  }}
+                >
+                  V1 : Deprecated
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 2. FOREGROUND CONTENT AREA */}
           <div className="relative z-10 w-full h-full flex justify-end">
             <div className="w-[55%] max-w-4xl h-full flex flex-col items-start text-left px-10 overflow-y-auto" style={{ paddingTop: '120px', paddingBottom: '120px' }}>
               
               {/* HEADER */}
               <div className="mb-6 w-full">
-                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">
-                  ARC {activeArcMeta?.value || "1"} • DESKTOP
-                </div>
+                {/* Date before title - only show if deprecated and date exists */}
+                {(() => {
+                  const scenario = getScenarioBySceneId(scene.id);
+                  const isDeprecated = scenario && deprecatedArcIds.includes(scenario.id);
+                  const dateFromState = scenario ? (lastReviewedDates?.[scenario.id] || '') : '';
+                  const dateFromConfig = arcPayload?.lastReviewedDate || '';
+                  const displayDate = dateFromState || dateFromConfig;
+                  return isDeprecated && displayDate;
+                })() && (
+                  <div className="text-xs text-gray-500 mb-2 font-medium">
+                    Last reviewed {(() => {
+                      const scenario = getScenarioBySceneId(scene.id);
+                      const dateFromState = scenario ? (lastReviewedDates?.[scenario.id] || '') : '';
+                      const dateFromConfig = arcPayload?.lastReviewedDate || '';
+                      return dateFromState || dateFromConfig;
+                    })()}
+                  </div>
+                )}
                 <h1 className="text-[56px] font-extrabold tracking-tight text-gray-900 mb-3 leading-tight">
                   {activeArcMeta?.title || "Arc Title"}
                 </h1>

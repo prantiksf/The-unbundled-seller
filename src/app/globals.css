@@ -65,6 +65,12 @@ body:not(.prototype-mode):hover .global-header {
   transform: translateY(0) !important;
 }
 
+/* Always show header when on scenario cover page (not home, not prototype) */
+body:not(.prototype-mode):not(:has(.hero)) .global-header {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
 /* Landing screen - ensure header is flush with no gap when visible */
 body:not(.prototype-mode):not(:has(.slack-shell)):hover .global-header {
   transform: translateY(0) !important;
@@ -496,3 +502,7 @@ body::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
   background-size: 256px;
 }
+
+/* Utility: hide scrollbar across all browsers while preserving scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

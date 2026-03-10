@@ -451,7 +451,7 @@ export const INITIAL_SCENARIOS: ScenarioConfig[] = [
   },
   {
     id: "slack-jtbd-1",
-    internalName: "JTBD 1",
+    internalName: "Zero-Day Value",
     isVisible: true,
     device: "desktop",
     description: "Model the $500K gap and deploy Agentforce to build the MEDDICC Deal Room.",
@@ -483,7 +483,7 @@ export const INITIAL_SCENARIOS: ScenarioConfig[] = [
   },
   {
     id: "slack-jtbd-2",
-    internalName: "JTBD 2",
+    internalName: "Proactive Modeling",
     isVisible: true,
     device: "desktop",
     description: "Model the $500K gap and deploy Agentforce to build the MEDDICC Deal Room.",
@@ -515,7 +515,7 @@ export const INITIAL_SCENARIOS: ScenarioConfig[] = [
   },
   {
     id: "slack-jtbd-3",
-    internalName: "JTBD 3",
+    internalName: "High-Velocity Execution",
     isVisible: true,
     device: "desktop",
     description: "Model the $500K gap and deploy Agentforce to build the MEDDICC Deal Room.",
@@ -547,7 +547,7 @@ export const INITIAL_SCENARIOS: ScenarioConfig[] = [
   },
   {
     id: "slack-jtbd-4",
-    internalName: "JTBD 4",
+    internalName: "High-Velocity Execution",
     isVisible: true,
     device: "desktop",
     description: "Model the $500K gap and deploy Agentforce to build the MEDDICC Deal Room.",
@@ -579,7 +579,7 @@ export const INITIAL_SCENARIOS: ScenarioConfig[] = [
   },
   {
     id: "slack-jtbd-5",
-    internalName: "JTBD 5",
+    internalName: "Generic Shell",
     isVisible: true,
     device: "desktop",
     description: "Model the $500K gap and deploy Agentforce to build the MEDDICC Deal Room.",
@@ -611,7 +611,7 @@ export const INITIAL_SCENARIOS: ScenarioConfig[] = [
   },
   {
     id: "slack-jtbd-6",
-    internalName: "JTBD 6",
+    internalName: "Generic Shell",
     isVisible: true,
     device: "desktop",
     description: "Model the $500K gap and deploy Agentforce to build the MEDDICC Deal Room.",

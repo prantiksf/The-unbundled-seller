@@ -2,14 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { SlackAppShell } from "./SlackAppShell";
+import { usePresentationScene } from "@/context/PresentationSceneContext";
+import { useScenarioVisibility } from "@/context/ScenarioVisibilityContext";
 import { SlackTodayView } from "./SlackTodayView";
 import { SlackSalesView } from "./SlackSalesView";
 import { SlackActivityView } from "./SlackActivityView";
 import { GlobalDMsView, GENERIC_GLOBAL_DMS } from "./GlobalDMsView";
 import { N2A1TodayView } from "./N2A1TodayView";
 import { N2A3TodayView } from "./N2A3TodayView";
+import { N2A4TodayView } from "./N2A4TodayView";
 import { CRMSkillsPanel } from "./CRMSkillsPanel";
-import { WorkModePanel } from "@/components/slackbot/WorkModePanel";
+import { N2A3WorkModePanel } from "@/components/slackbot/N2A3WorkModePanel";
+import { N2A4WorkModePanel } from "@/components/slackbot/N2A4WorkModePanel";
 import { PRIORITY_PROSPECTS } from "@/data/priorityProspects";
 import type { NavView } from "@/app/(demo)/demo/workspace/[workspaceId]/_context/demo-layout-context";
 import type { ArcPayloadConfig } from "@/config/demoMetadata";
@@ -32,6 +36,8 @@ interface SlackAppShellWrapperProps {
   onAdvanceScenario?: () => void;
   /** Flag to enable N2A3 Priority Prospects work mode */
   isN2A3?: boolean;
+  /** Flag to enable N2A4 Priority Prospects work mode */
+  isN2A4?: boolean;
 }
 
 export function SlackAppShellWrapper({
@@ -42,7 +48,10 @@ export function SlackAppShellWrapper({
   arcPayload,
   onAdvanceScenario,
   isN2A3 = false,
+  isN2A4 = false,
 }: SlackAppShellWrapperProps) {
+  const { currentScene } = usePresentationScene();
+  const { getScenarioBySceneId, deprecatedArcIds } = useScenarioVisibility();
 
   // Use arcPayload.defaultNavId if provided, otherwise fall back to defaultNav prop
   const initialNavId = arcPayload?.defaultNavId || defaultNav;
@@ -57,23 +66,40 @@ export function SlackAppShellWrapper({
   // Work mode state for N2A3
   const [workModeState, setWorkModeState] = useState<"queue" | "single" | null>(null);
   const [activeProspectIndex, setActiveProspectIndex] = useState(0);
+  // Stores the full prospect selected via CTA (preserves actionType + meeting/contract meta)
+  const [selectedProspect, setSelectedProspect] = useState<PriorityProspect | null>(null);
 
-  // Check if this is N2A3 - enable Priority Prospects work mode features
+  // Check if this is N2A3 or N2A4 - enable Priority Prospects work mode features
   const shouldShowN2A3View = isN2A3;
+  const shouldShowN2A4View = isN2A4;
 
   const handleStartWorkMode = () => {
     setWorkModeState("queue");
     setActiveProspectIndex(0);
-    setForceSlackbotOpen(true);
+    // N2A3 opens Slackbot immediately; N2A4 uses progressive disclosure from center CTA
+    if (isN2A3) {
+      setForceSlackbotOpen(true);
+    } else if (isN2A4) {
+      setForceSlackbotOpen(false);
+    }
   };
 
   const handleReviewDraft = (prospect: PriorityProspect) => {
+    // Store the full prospect so actionType + meeting/contract meta flow to the panel
+    setSelectedProspect(prospect);
     const index = PRIORITY_PROSPECTS.findIndex(p => p.id === prospect.id);
     if (index !== -1) {
       setActiveProspectIndex(index);
-      setWorkModeState("single");
-      setForceSlackbotOpen(true);
     }
+    setWorkModeState("single");
+    // Open Slackbot when user clicks CTA
+    setForceSlackbotOpen(true);
+  };
+
+  const handleExitWorkMode = () => {
+    setWorkModeState(null);
+    setActiveProspectIndex(0);
+    setForceSlackbotOpen(false);
   };
 
   const handleWorkModeNext = () => {
@@ -165,6 +191,20 @@ export function SlackAppShellWrapper({
             />
           );
         }
+        // N2A4-specific routing: render N2A4TodayView if work mode is enabled or if we should show it
+        if (shouldShowN2A4View && !arcPayload?.onboarding) {
+          return (
+            <N2A4TodayView
+              onStartWorkMode={handleStartWorkMode}
+              onReviewDraft={handleReviewDraft}
+              onExitWorkMode={handleExitWorkMode}
+              onNavigateToActivity={() => setActiveNavId("activity")}
+              externalWorkModeActive={workModeState !== null}
+              externalBuilderOpen={forceSlackbotOpen}
+              externalSelectedProspectId={PRIORITY_PROSPECTS[activeProspectIndex]?.id}
+            />
+          );
+        }
         console.log('[SlackAppShellWrapper] Rendering global SlackTodayView (no onboarding)');
         return <SlackTodayView onNavigateToActivity={() => setActiveNavId("activity")} />;
       }
@@ -203,7 +243,7 @@ export function SlackAppShellWrapper({
     sidebarApps: arcPayload?.sidebarApps,
   };
 
-  // Bot payload: CRMSkillsPanel for N2A1, WorkModePanel for N2A3, default for others
+  // Bot payload: CRMSkillsPanel for N2A1, N2A3WorkModePanel for N2A3, N2A4WorkModePanel for N2A4, default for others
   const botPayload = arcPayload?.onboarding ? (
     <CRMSkillsPanel
       skills={arcPayload.onboarding.skills}
@@ -213,8 +253,8 @@ export function SlackAppShellWrapper({
       onClose={() => setForceSlackbotOpen(false)}
       onAdvanceScenario={onAdvanceScenario}
     />
-  ) : workModeState !== null ? (
-    <WorkModePanel
+  ) : workModeState !== null && isN2A3 ? (
+    <N2A3WorkModePanel
       mode={workModeState}
       activeProspectIndex={activeProspectIndex}
       onNext={handleWorkModeNext}
@@ -225,20 +265,71 @@ export function SlackAppShellWrapper({
         setForceSlackbotOpen(false);
       }}
     />
+  ) : workModeState !== null && isN2A4 ? (
+    <N2A4WorkModePanel
+      mode={workModeState}
+      activeProspectIndex={activeProspectIndex}
+      onNext={handleWorkModeNext}
+      onPrevious={handleWorkModePrevious}
+      onSendEmail={handleSendEmail}
+      activeProspect={selectedProspect ?? undefined}
+      onClose={() => {
+        setForceSlackbotOpen(false);
+      }}
+    />
   ) : undefined;
 
   return (
-    <SlackAppShell
-      activeNavId={activeNavId}
-      onNavChange={setActiveNavId}
-      showSidebar={activeNavId !== "today" && activeNavId !== "sales" && activeNavId !== "activity"}
-      activeChatId={defaultChannelId}
-      botPayload={botPayload}
-      forceSlackbotOpen={forceSlackbotOpen}
-      onSlackbotToggle={setForceSlackbotOpen}
-      {...sidebarProps}
-    >
-      {renderContent()}
-    </SlackAppShell>
+    <div className="relative w-full h-full">
+      {/* Deprecated badge - check if current scene's arc is deprecated */}
+      {(() => {
+        const scenario = getScenarioBySceneId(currentScene);
+        const isDeprecated = scenario && deprecatedArcIds.includes(scenario.id);
+        return isDeprecated;
+      })() && (
+        <div 
+          className="absolute top-1/2 -translate-y-1/2 z-50 pointer-events-none flex flex-col items-center gap-3"
+          style={{ 
+            right: '120px',
+            transform: 'translateY(-50%)',
+          }}
+        >
+          {/* Deprecated Badge - 150% bigger and 80% transparent */}
+          <div 
+            style={{ 
+              transform: 'rotate(-5deg)',
+              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))',
+            }}
+          >
+            <div 
+              className="w-80 h-80 rounded-full font-bold text-base uppercase tracking-wider flex items-center justify-center text-center"
+              style={{
+                    backgroundColor: '#EF4444',
+                    color: '#FFFFFF',
+                    border: '6px solid #DC2626',
+                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.5)',
+                    fontWeight: 700,
+                    padding: '24px',
+                    opacity: 0.8,
+              }}
+            >
+                  V1 : Deprecated
+                </div>
+              </div>
+            </div>
+          )}
+      <SlackAppShell
+        activeNavId={activeNavId}
+        onNavChange={setActiveNavId}
+        showSidebar={activeNavId !== "today" && activeNavId !== "sales" && activeNavId !== "activity"}
+        activeChatId={defaultChannelId}
+        botPayload={botPayload}
+        forceSlackbotOpen={forceSlackbotOpen}
+        onSlackbotToggle={setForceSlackbotOpen}
+        {...sidebarProps}
+      >
+        {renderContent()}
+      </SlackAppShell>
+    </div>
   );
 }
